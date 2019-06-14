@@ -2,8 +2,6 @@ module app
 
 go 1.12
 
-replace client v0.0.0 => ./client
-
 replace server v0.0.0 => ./server
 
 replace shared v0.0.0 => ./shared
