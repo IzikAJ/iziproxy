@@ -7,7 +7,6 @@ replace server v0.0.0 => ./server
 replace shared v0.0.0 => ./shared
 
 require (
-	client v0.0.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.2
 	github.com/kr/fs v0.1.0 // indirect

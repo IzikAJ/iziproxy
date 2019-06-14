@@ -25,7 +25,7 @@ func serve(port: Int) {
 		bindSubdomainHandler(conf),
 	)
 
-	router.HandleFunc("/stats", statsHandler)
+	router.HandleFunc("/stats", bindStatsHandler(conf))
 
 	router.Methods("GET").HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
