@@ -3,29 +3,28 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"shared"
+
+	"github.com/gorilla/mux"
 )
 
-func statsHandler func(w http.ResponseWriter, r *http.Request) {
+func statsHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintln(w, time.Now().String())
 	// raw, _ := json.Marshal((*conf).Stats)
 	// fmt.Fprintln(w, string(raw))
 }
 
-func serve(port: Int) {
+func serve(port int) {
 	router := mux.NewRouter()
 
-	router.Host(
-		"{subdomain:.+}." + hostName,
-	).HandlerFunc(
-		bindSubdomainHandler(conf),
-	)
-
-	router.HandleFunc("/stats", bindStatsHandler(conf))
+	router.HandleFunc("/stats", statsHandler)
 
 	router.Methods("GET").HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
