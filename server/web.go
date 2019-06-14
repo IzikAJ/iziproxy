@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"shared"
@@ -116,5 +117,5 @@ func serve(conf *Config) {
 		},
 	)
 
-	log.Fatal(http.ListenAndServe(":7080", router))
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(conf.Port), router))
 }

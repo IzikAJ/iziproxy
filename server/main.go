@@ -25,10 +25,7 @@ func Server(config *Config) {
 	(*config).locker.Add(2)
 
 	go TCPServer(config)
-	web := Web{
-		port: 1234,
-		host: "0.0.0.0",
-	}
+	web := Web{}
 	go web.start(config)
 
 	(*config).locker.Wait()
