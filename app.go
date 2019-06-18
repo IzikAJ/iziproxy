@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"server"
 	"shared"
 
 	"github.com/gorilla/mux"
@@ -39,6 +40,9 @@ func main() {
 	defer fmt.Println("THE END!")
 
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
+	if port <= 0 {
+		port = 3000
+	}
 	flags := shared.AppFlags{
 		Host: "0.0.0.0",
 		Port: port,
@@ -51,6 +55,10 @@ func main() {
 
 	fmt.Println("host", flags.Host)
 	fmt.Println("port", flags.Port)
+
+	conf := server.Config{}
+
+	go server.TCPServer(conf.Initialize())
 
 	serve(port)
 }

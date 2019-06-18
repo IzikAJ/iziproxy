@@ -78,6 +78,7 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 
 // TCPServer - run tcp server
 func TCPServer(conf *Config) {
+	(*conf).locker.Add(1)
 	defer (*conf).locker.Done()
 
 	listener, err := net.Listen("tcp", ":2010")

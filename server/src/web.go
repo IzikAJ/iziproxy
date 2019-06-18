@@ -27,7 +27,12 @@ func (server Web) start(conf *Config) {
 	defer (*conf).locker.Done()
 
 	fmt.Println("TODO: WEB SERVER")
-	serve(conf)
+
+	if (*conf).Single {
+		serveSingle(conf)
+	} else {
+		serve(conf)
+	}
 }
 
 func placePack(conf *Config, pack *ProxyPack) {
@@ -115,6 +120,19 @@ func serve(conf *Config) {
 		func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "//"+hostName+"/stats", 302)
 		},
+	)
+
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(conf.Port), router))
+}
+
+func serveSingle(conf *Config) {
+	fmt.Println("STARTING IN SINGLE MODE")
+	router := mux.NewRouter()
+
+	router.HandleFunc("/stats", bindStatsHandler(conf))
+
+	router.PathPrefix("/").HandlerFunc(
+		bindSubdomainHandler(conf),
 	)
 
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(conf.Port), router))

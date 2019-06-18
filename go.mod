@@ -2,11 +2,14 @@ module app
 
 go 1.12
 
-replace server v0.0.0 => ./server
+replace server v0.0.0 => ./server/src
+
+replace client v0.0.0 => ./client/src
 
 replace shared v0.0.0 => ./shared
 
 require (
+	client v0.0.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.2
 	github.com/kr/fs v0.1.0 // indirect

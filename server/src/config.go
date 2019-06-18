@@ -14,6 +14,7 @@ type Config struct {
 	Stats  Stats
 	locker sync.WaitGroup
 
+	Single bool
 	sync.Mutex
 	pool  map[uuid.UUID]*ProxyPack
 	space map[string](chan<- uuid.UUID)
