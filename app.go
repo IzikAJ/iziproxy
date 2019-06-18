@@ -17,21 +17,19 @@ import (
 func statsHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintln(w, time.Now().String())
-	// raw, _ := json.Marshal((*conf).Stats)
-	// fmt.Fprintln(w, string(raw))
+}
+
+func proxyHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "TODO\n\n\n")
+	fmt.Fprintln(w, time.Now().String())
 }
 
 func serve(port int) {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/stats", statsHandler)
-
-	router.Methods("GET").HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, "/stats", 302)
-		},
-	)
-
+	router.HandleFunc("/__stats", statsHandler)
+	router.HandleFunc("/*", proxyHandler)
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), router))
 }
 
