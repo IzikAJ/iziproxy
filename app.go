@@ -29,7 +29,8 @@ func serve(port int) {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/__stats", statsHandler)
-	router.HandleFunc("/*", proxyHandler)
+	router.PathPrefix("/").HandlerFunc(proxyHandler)
+
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), router))
 }
 
