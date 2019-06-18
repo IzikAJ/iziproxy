@@ -18,7 +18,7 @@ ENV HOME /app
 WORKDIR /app
 RUN useradd -m heroku
 USER heroku
-CMD /app/bin/app
+CMD /app/bin/server --single 
 
 # FROM golang:1.12-alpine
 
