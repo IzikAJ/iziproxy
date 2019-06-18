@@ -16,9 +16,13 @@ FROM heroku/heroku:18
 COPY --from=build /app /app
 ENV HOME /app
 WORKDIR /app
+
+ADD ./.profile.d /app/.profile.d
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+
 RUN useradd -m heroku
 USER heroku
-CMD /app/bin/server --single 
+CMD bash heroku-exec.sh && /app/bin/server --single 
 
 # FROM golang:1.12-alpine
 
