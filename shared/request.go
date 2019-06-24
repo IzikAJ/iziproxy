@@ -80,15 +80,14 @@ func RequestFromRequest(r *http.Request) (Request, error) {
 // RequestFromResponse - return data from http response
 func RequestFromResponse(r *http.Response) (pr Request, err error) {
 	headers := make([]RequestHeader, 0)
+	if r == nil {
+		return
+	}
 	for k, v := range r.Header {
 		headers = append(headers, RequestHeader{Name: k, Value: v})
 	}
 	body := make([]byte, 0)
 	if r.Header.Get("Content-Length") != "0" {
-		// utf8, err := charset.NewReader(r.Body, r.Header.Get("Content-Type"))
-		// if err != nil {
-		// 	fmt.Println("Encoding error:", err, r.Header.Get("Content-Type"))
-		// }
 		body, err = ioutil.ReadAll(r.Body)
 		defer r.Body.Close()
 	}
