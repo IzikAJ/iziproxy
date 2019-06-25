@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 
-	"client"
-	"shared"
+	"github.com/izikaj/iziproxy/client"
+	"github.com/izikaj/iziproxy/shared"
 )
 
 func main() {

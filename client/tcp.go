@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"shared"
+	"github.com/izikaj/iziproxy/shared"
 )
 
 func (client *Client) load(req shared.Request) (resp shared.Request, err error) {
@@ -83,11 +83,13 @@ func (client *Client) connect() {
 			if (*client).retry > 0 {
 				(*client).retry--
 				fmt.Printf("  retry times least %d\n", (*client).retry)
-				time.Sleep(time.Second)
+				time.Sleep(3 * time.Second)
 				continue
 			} else {
 				return
 			}
+		} else {
+			(*client).retry = 10
 		}
 		defer conn.Close()
 		client.conn = &shared.Connection{Conn: conn}

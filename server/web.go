@@ -8,13 +8,13 @@ import (
 	"strconv"
 	"time"
 
-	"shared"
-
 	"github.com/gorilla/mux"
+	"github.com/izikaj/iziproxy/shared"
 )
 
 const (
-	hostName = "proxy.me"
+	hostName      = "proxy.me"
+	packetTimeout = 120 * time.Second
 )
 
 // Web - simple web Web
@@ -41,12 +41,17 @@ func placePack(conf *Config, pack *ProxyPack) {
 	(*conf).pool[(*pack).Request.ID] = pack
 }
 
+func failResp(w *http.ResponseWriter, status int, msg string) {
+	(*w).WriteHeader(status)
+	(*w).Write([]byte(msg))
+}
+
 func bindSubdomainHandler(conf *Config) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, _ := shared.RequestFromRequest(r)
 
-		vars := mux.Vars(r)
-		subdomain := vars["subdomain"]
+		// vars := mux.Vars(r)
+		// subdomain := vars["subdomain"]
 
 		signal := make(chan int)
 
@@ -58,14 +63,22 @@ func bindSubdomainHandler(conf *Config) func(http.ResponseWriter, *http.Request)
 
 		if spaceSignal, ok := (*conf).space["test"]; ok {
 			spaceSignal <- req.ID
+		} else {
+			failResp(&w, http.StatusBadGateway, "NO CLIENT CONNECTED")
+			return
 		}
 
 		select {
 		case <-signal:
 
 			if d, ok := (*conf).pool[req.ID]; ok {
-				// fmt.Fprintf(w, "\n\n%q\n\n%q\n\n", (*d).Response.Status, (*d).Response.Body)
 				resp := (*d).Response
+
+				if resp.Status == 0 {
+					(*conf).Stats.fail()
+					failResp(&w, http.StatusBadGateway, "EMPTY RESPONSE FROM CLIENT")
+					return
+				}
 				fmt.Printf("> [%d] %s\n", resp.Status, (*d).Request.Path)
 
 				for _, header := range resp.Headers {
@@ -77,22 +90,15 @@ func bindSubdomainHandler(conf *Config) func(http.ResponseWriter, *http.Request)
 				w.WriteHeader(resp.Status)
 				w.Write(resp.Body)
 				(*conf).Stats.complete()
+			} else {
+				conf.Stats.fail()
+				failResp(&w, http.StatusBadGateway, "NO RESPONSE FROM CLIENT")
 			}
 
-		case <-time.Tick(100 * time.Second):
-			fmt.Println("TIMEOUT ERROR!")
+		case <-time.Tick(packetTimeout):
 			conf.Stats.timeout()
-			w.WriteHeader(http.StatusGatewayTimeout)
-			fmt.Fprintf(w, "ERROR: TIMEOUT\n")
-			fmt.Fprintf(w, "Method:     %q\n", r.Method)
-			fmt.Fprintf(w, "RequestURI: %q\n", r.RequestURI)
-			fmt.Fprintf(w, "RemoteAddr: %q\n", r.RemoteAddr)
-			fmt.Fprintf(w, "SUBDOMAIN:  %q\n\n", subdomain)
+			failResp(&w, http.StatusGatewayTimeout, "TIMEOUT ERROR")
 		}
-
-		// time.Sleep(500 * time.Millisecond)
-
-		// fmt.Fprintln(w, string(dumped))
 	}
 }
 

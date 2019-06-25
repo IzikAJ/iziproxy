@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"sync"
 
-	"shared"
+	"github.com/izikaj/iziproxy/shared"
 )
 
 // Client - client instance

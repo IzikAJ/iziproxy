@@ -5,7 +5,9 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"net"
+	"syscall"
 )
 
 const (
@@ -14,7 +16,6 @@ const (
 
 // Connection - net conection with mutex
 type Connection struct {
-	// mux    sync.RWMutex
 	reader *bufio.Reader
 	net.Conn
 }
@@ -23,16 +24,6 @@ func md5Hash(data []byte) string {
 	cntMD5 := md5.New()
 	cntMD5.Write(data)
 	return hex.EncodeToString(cntMD5.Sum(nil))
-}
-
-func info(prefix string, data []byte) {
-	max := 150
-	dlen := len(data)
-	if dlen > max {
-		fmt.Printf("[%s (%d)\n%s\n...\n%s\n]\n", prefix, dlen, data[:(max/2)], data[dlen-(max/2):])
-	} else if dlen > 0 {
-		fmt.Printf("[%s (%d)\n%s\n]\n", prefix, dlen, data)
-	}
 }
 
 // Init - initialize connection instance
@@ -51,7 +42,6 @@ func (conn *Connection) ReadRaw() (data []byte, err error) {
 	if dlen > 0 && data[dlen-1] == breakPoint {
 		data = data[:dlen-1]
 	}
-	// info("R", data)
 	return
 }
 
@@ -59,10 +49,17 @@ func (conn *Connection) ReadRaw() (data []byte, err error) {
 func (conn *Connection) WriteRaw(data []byte) (err error) {
 	_, err = (*conn).Write(append(data, breakPoint))
 	if err != nil {
+		switch err {
+		case io.EOF:
+			fmt.Println("!!!!!!!!!!!!!!!!!! io.EOF")
+			return
+		case syscall.EPIPE:
+			fmt.Println("!!!!!!!!!!!!!!!!!! syscall.EPIPE")
+			return
+		}
 		fmt.Println("CONNECTION_WRITE ERROR", err)
 		return
 	}
-	// info("W", data)
 	return
 }
 

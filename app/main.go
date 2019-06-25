@@ -9,10 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	"server"
-	"shared"
-
 	"github.com/gorilla/mux"
+	"github.com/izikaj/iziproxy/server"
+	"github.com/izikaj/iziproxy/shared"
 )
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {

@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"time"
 )
 
@@ -116,12 +115,7 @@ type msgManager struct{}
 
 func (m msgManager) ReciveMessage(conn *Connection) (msg Message, err error) {
 	data, err := conn.ReadRaw()
-	// data, err := ReadConnectionData(conn)
 	if err != nil {
-		if err == io.EOF {
-			fmt.Println("LOST CONNECTION!", data)
-		}
-		fmt.Println("!! reciveMessage ERROR !!", err)
 		return
 	}
 

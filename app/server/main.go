@@ -6,8 +6,8 @@ import (
 	"os"
 	"strconv"
 
-	"server"
-	"shared"
+	"github.com/izikaj/iziproxy/server"
+	"github.com/izikaj/iziproxy/shared"
 )
 
 func main() {
@@ -19,8 +19,8 @@ func main() {
 		port = 3000
 	}
 	flags := shared.AppFlags{
-		Host: "0.0.0.0",
-		Port: port,
+		Host:   "0.0.0.0",
+		Port:   port,
 		Single: false,
 	}
 
@@ -37,8 +37,8 @@ func main() {
 	}
 
 	conf := server.Config{
-		Host: flags.Host,
-		Port: flags.Port,
+		Host:   flags.Host,
+		Port:   flags.Port,
 		Single: flags.Single,
 	}
 

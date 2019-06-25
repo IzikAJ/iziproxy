@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 
-	"shared"
+	"github.com/izikaj/iziproxy/shared"
 )
 
 // ProxyPack - just one server req

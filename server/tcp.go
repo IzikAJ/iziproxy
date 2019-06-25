@@ -2,30 +2,46 @@ package server
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"time"
 
-	"shared"
-
 	"github.com/google/uuid"
+	"github.com/izikaj/iziproxy/shared"
 )
 
 func handleServerConnection(conf *Config, conn *shared.Connection) {
 	defer func() {
 		(*conn).Close()
 		fmt.Println("CLOSED CONNECTION")
+		delete((*conf).space, "test")
+
 		(*conf).Stats.disconnected()
 	}()
 
 	conn.Init()
 
 	spaceSignal := make(chan uuid.UUID)
-	earthSignal := make(chan uuid.UUID)
+	ufoSignal := make(chan int)
+
 	go func() {
 		for {
 			msg, err := shared.MsgManager.ReciveMessage(conn)
 			if err != nil {
 				conf.Stats.fail()
+				if err == io.EOF {
+					fmt.Println("R: CLIENT DISCONNECTED (EOF)", err)
+					conf.Stats.disconnected()
+					ufoSignal <- 1
+					return
+				}
+				switch err.(type) {
+				case net.Error:
+					fmt.Println("R: CLIENT DISCONNECTED (EPIPE)", err)
+					conf.Stats.disconnected()
+					ufoSignal <- 1
+					return
+				}
 				fmt.Println("reciveMessage ERROR", err, msg)
 				return
 			}
@@ -38,7 +54,6 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 			if req, ok := (*conf).pool[resp.ID]; ok {
 				(*req).Response = resp
 
-				earthSignal <- resp.ID
 				(*req).signal <- resp.Status
 			} else {
 				fmt.Println("POOL ERROR")
@@ -48,22 +63,25 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 	(*conf).space["test"] = spaceSignal
 	for {
 		select {
-		case <-earthSignal:
-			// fmt.Println("EARTH SIGNAL?", ruuid)
-
 		case ruuid := <-spaceSignal:
-			// recived request uuid
-			// fmt.Println("SPACE SIGNAL?")
-
 			if req, ok := (*conf).pool[ruuid]; ok {
 				msg, err := shared.Commander.MakeRequest((*req).Request)
 				err = conn.SendMessage(msg)
 				if err != nil {
-					fmt.Println("SEND REQUEST ERROR?", err)
+					if err == io.EOF {
+						fmt.Println("W: CLIENT DISCONNECTED (EOF)", err)
+						conf.Stats.disconnected()
+						return
+					}
+					switch err.(type) {
+					case net.Error:
+						fmt.Println("W: CLIENT DISCONNECTED (EPIPE)", err)
+						conf.Stats.disconnected()
+						return
+					}
+					fmt.Println("SEND REQUEST ERROR", err)
 					continue
 				}
-			} else {
-				fmt.Println("NO RECORD IN POOL!", ruuid)
 			}
 		case <-time.Tick(60 * time.Second):
 			msg, err := shared.Commander.MakePing()
@@ -72,6 +90,8 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 				fmt.Println("PING ERROR?", (*conn).RemoteAddr())
 				return
 			}
+		case <-ufoSignal:
+			return
 		}
 	}
 }
