@@ -8,7 +8,7 @@ RUN mkdir -p /tmp/buildpack/heroku/go /tmp/build_cache /tmp/env
 RUN curl https://codon-buildpacks.s3.amazonaws.com/buildpacks/heroku/go.tgz | tar xz -C /tmp/buildpack/heroku/go
 
 #Execute Buildpack
-RUN STACK=heroku-18 /tmp/buildpack/heroku/go/bin/compile /app/server /tmp/build_cache /tmp/env
+RUN STACK=heroku-18 /tmp/buildpack/heroku/go/bin/compile /app/app/server /tmp/build_cache /tmp/env
 
 # Prepare final, minimal image
 FROM heroku/heroku:18
@@ -22,7 +22,7 @@ RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 RUN useradd -m heroku
 USER heroku
-CMD bash heroku-exec.sh && /app/bin/server --single 
+CMD bash heroku-exec.sh && /app/bin/server --single
 
 # FROM golang:1.12-alpine
 
