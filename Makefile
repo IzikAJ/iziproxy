@@ -4,7 +4,7 @@ DOCKER_CMD=$(DOCKER_BUILD)/app
 
 $(DOCKER_CMD): clean
 	mkdir -p $(DOCKER_BUILD)
-	$(GO_BUILD_ENV) go build -v -o $(DOCKER_CMD) server/app.go
+	$(GO_BUILD_ENV) go build -v -o $(DOCKER_CMD) app/server/main.go
 
 clean:
 	rm -rf $(DOCKER_BUILD)
