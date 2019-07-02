@@ -2,18 +2,25 @@ package shared
 
 // Command Types for transfered messages
 const (
-	// CommandPing - ping
+	// - SERVICE COMMANDS:
+	// CommandPing - ping request
 	CommandPing = iota
-	// CommandAuth - auth req
+	// CommandPong - ping response
+	CommandPong
+
+	// - CONTEXT COMMANDS:
+	// CommandReady - if server connection ready
+	CommandReady
+	// CommandAuth - ask/send credentials
 	CommandAuth
-	// CommandSpace - subdoamin req
-	CommandSpace
+	// CommandScope - allow/request scope
+	CommandScope
+	// CommandFailed - response if previous command invalid/failed
+	CommandFailed
+
+	// - TRANSFER COMMANDS:
 	// CommandRequest - request pack
 	CommandRequest
 	// CommandResponse - response pack
 	CommandResponse
-	// CommandOK - ok response
-	CommandOK
-	// CommandFail - failed response
-	CommandFail
 )

@@ -40,14 +40,9 @@ func (cmd *commander) MakePing() (msg Message, err error) {
 	return Message{Command: CommandPing}, nil
 }
 
-// MakeOK - OK message
-func (cmd *commander) MakeOK() (msg Message, err error) {
-	return Message{Command: CommandOK}, nil
-}
-
-// MakeFail - Fail message
-func (cmd *commander) MakeFail() (msg Message, err error) {
-	return Message{Command: CommandFail}, nil
+// MakePong - Pong message
+func (cmd *commander) MakePong() (msg Message, err error) {
+	return Message{Command: CommandPong}, nil
 }
 
 // MakeRequest - req message
