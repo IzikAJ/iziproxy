@@ -12,6 +12,12 @@ import (
 	"github.com/izikaj/iziproxy/shared"
 )
 
+// ReconnectTimeout - timeout to reconnect attempt in seconds
+const ReconnectTimeout = 3
+
+// ReconnectTimes - count of reconnect attempts
+const ReconnectTimes = 10
+
 func (client *Client) load(req shared.Request) (resp shared.Request, err error) {
 	httpReq, _ := http.NewRequest(
 		req.Method,
@@ -51,7 +57,11 @@ func (client *Client) handle() {
 
 		switch msg.Command {
 		case shared.CommandPing:
-			fmt.Printf(".")
+			pong, err := shared.Commander.MakePong()
+			err = shared.MsgManager.SendMessage(pong, conn)
+			if err != nil {
+				fmt.Println("PONG ERROR", err)
+			}
 		case shared.CommandRequest:
 			go func() {
 				req, err := shared.MsgManager.GetRequest(msg)
@@ -83,13 +93,13 @@ func (client *Client) connect() {
 			if (*client).retry > 0 {
 				(*client).retry--
 				fmt.Printf("  retry times least %d\n", (*client).retry)
-				time.Sleep(3 * time.Second)
+				time.Sleep(ReconnectTimeout * time.Second)
 				continue
 			} else {
 				return
 			}
 		} else {
-			(*client).retry = 10
+			(*client).retry = ReconnectTimes
 		}
 		defer conn.Close()
 		client.conn = &shared.Connection{Conn: conn}

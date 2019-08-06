@@ -45,18 +45,25 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 				fmt.Println("reciveMessage ERROR", err, msg)
 				return
 			}
-			resp, err := shared.MsgManager.GetRequest(msg)
-			if err != nil {
-				fmt.Println("getRequest ERROR", err, msg.Data)
-				return
-			}
+			switch msg.Command {
+			case shared.CommandResponse:
+				resp, err := shared.MsgManager.GetRequest(msg)
+				if err != nil {
+					fmt.Println("getRequest ERROR", err, msg.Data)
+					return
+				}
+				if req, ok := (*conf).pool[resp.ID]; ok {
+					(*req).Response = resp
 
-			if req, ok := (*conf).pool[resp.ID]; ok {
-				(*req).Response = resp
-
-				(*req).signal <- resp.Status
-			} else {
-				fmt.Println("POOL ERROR")
+					(*req).signal <- resp.Status
+				} else {
+					fmt.Println("POOL ERROR")
+				}
+			case shared.CommandPong:
+				fmt.Print("<")
+			default:
+				fmt.Println("RECIVED UNHANDLED MESSAGE")
+				msg.Print()
 			}
 		}
 	}()
@@ -83,7 +90,7 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 					continue
 				}
 			}
-		case <-time.Tick(60 * time.Second):
+		case <-time.Tick(10 * time.Second):
 			msg, err := shared.Commander.MakePing()
 			err = conn.SendMessage(msg)
 			if err != nil {

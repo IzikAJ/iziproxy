@@ -34,24 +34,17 @@ func (msg Message) explain() {
 	switch msg.Command {
 	case CommandPing:
 		fmt.Printf("  command: %q - %v\n", msg.Command, "ping")
+	case CommandPong:
+		fmt.Printf("  command: %q - %v\n", msg.Command, "pong")
 	case CommandAuth:
 		fmt.Printf("  command: %q - %v\n", msg.Command, "auth")
 	case CommandRequest:
-		fmt.Printf("  command: %q - %v\n", msg.Command, "CommandRequest")
-		req, err := RequestFromDump(msg.Data)
-		// req, err := RequestFromDump(msg.Data)
-		if err != nil {
-			fmt.Printf("ERR \n %q\n", err)
-			return
-		}
+		fmt.Printf("  command: %q - %v\n", msg.Command, "request")
+		req, _ := RequestFromDump(msg.Data)
 		fmt.Printf("  data: %q\n", req)
 	case CommandResponse:
-		fmt.Printf("  command: %q - %v\n", msg.Command, "CommandResponse")
-		req, err := RequestFromDump(msg.Data)
-		if err != nil {
-			fmt.Printf("ERR \n %q\n", err)
-			return
-		}
+		fmt.Printf("  command: %q - %v\n", msg.Command, "response")
+		req, _ := RequestFromDump(msg.Data)
 		fmt.Printf("  data: %q\n", req)
 	default:
 		fmt.Printf("  command: %q - %v\n", msg.Command, "UNKNOWN CMD")

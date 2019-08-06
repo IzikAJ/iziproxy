@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Starting...", flag.Args())
+	fmt.Println("Starting client...", flag.Args())
 	defer fmt.Println("THE END!")
 
 	flags := shared.AppFlags{
