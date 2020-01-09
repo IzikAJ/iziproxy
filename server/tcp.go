@@ -11,16 +11,6 @@ import (
 )
 
 func handleServerConnection(conf *Config, conn *shared.Connection) {
-	defer func() {
-		(*conn).Close()
-		fmt.Println("CLOSED CONNECTION")
-		delete((*conf).space, "test")
-
-		(*conf).Stats.disconnected()
-	}()
-
-	conn.Init()
-
 	cable := Cable{
 		Connected: true,
 
@@ -28,6 +18,18 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 		spaceSignal: make(chan uuid.UUID),
 		ufoSignal:   make(chan int),
 	}
+
+	defer func() {
+		(*conn).Close()
+		fmt.Println("CLOSED CONNECTION")
+		if cable.Scope != "" {
+			delete((*conf).space, cable.Scope)
+		}
+
+		(*conf).Stats.disconnected()
+	}()
+
+	conn.Init()
 
 	go func() {
 		for {

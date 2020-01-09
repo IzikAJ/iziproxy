@@ -7,18 +7,18 @@ import (
 
 // ConnectionSetup - dump of http request
 type ConnectionSetup struct {
-	Key      string `json:"key"`
+	Token    string `json:"token"`
 	Scope    string `json:"scope,omitempty"`
 	Fallback bool   `json:"fallback"`
 }
 
 func (conn ConnectionSetup) printTab(prefix string) {
 	fmt.Printf("%vConnectionSetup: {\n", prefix)
-	fmt.Printf("%v  Key:  %q\n", prefix, conn.Key)
+	fmt.Printf("%v%10v: %v\n", prefix, "Token", conn.Token)
 	if conn.Scope != "" {
-		fmt.Printf("%v  Scope:    %q\n", prefix, conn.Scope)
+		fmt.Printf("%v%10v: %q\n", prefix, "Scope", conn.Scope)
 	}
-	fmt.Printf("%v  Fallback:    %v\n", prefix, conn.Fallback)
+	fmt.Printf("%v%10v: %v\n", prefix, "Fallback", conn.Fallback)
 	fmt.Printf("%v}\n", prefix)
 }
 

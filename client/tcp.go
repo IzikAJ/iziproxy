@@ -46,7 +46,7 @@ func (client *Client) handle() {
 	conn.Init()
 
 	// test setup
-	msg, err := shared.Commander.MakeSetup(shared.ConnectionSetup{Key: "test_key", Scope: "izi"})
+	msg, err := shared.Commander.MakeSetup(shared.ConnectionSetup{Token: "test_key", Scope: "izi"})
 	if err != nil {
 		return
 	}
