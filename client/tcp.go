@@ -44,6 +44,17 @@ func (client *Client) handle() {
 	conn := client.conn
 	defer conn.Close()
 	conn.Init()
+
+	// test setup
+	msg, err := shared.Commander.MakeSetup(shared.ConnectionSetup{Key: "test_key", Scope: "izi"})
+	if err != nil {
+		return
+	}
+	err = shared.MsgManager.SendMessage(msg, conn)
+	if err != nil {
+		return
+	}
+
 	for {
 		msg, err := shared.MsgManager.ReciveMessage(conn)
 		if err != nil {
@@ -56,6 +67,12 @@ func (client *Client) handle() {
 		}
 
 		switch msg.Command {
+		case shared.CommandFailed:
+			fmt.Println("Failed COMMAND")
+			msg.Print()
+		case shared.CommandReady:
+			fmt.Println("Ready COMMAND")
+			msg.Print()
 		case shared.CommandPing:
 			pong, err := shared.Commander.MakePong()
 			err = shared.MsgManager.SendMessage(pong, conn)

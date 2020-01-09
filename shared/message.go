@@ -36,8 +36,14 @@ func (msg Message) explain() {
 		fmt.Printf("  command: %q - %v\n", msg.Command, "ping")
 	case CommandPong:
 		fmt.Printf("  command: %q - %v\n", msg.Command, "pong")
-	case CommandAuth:
-		fmt.Printf("  command: %q - %v\n", msg.Command, "auth")
+	case CommandSetup:
+		fmt.Printf("  command: %q - %v\n", msg.Command, "setup")
+		data, _ := ConnectionSetupFromDump(msg.Data)
+		data.printTab("  ")
+	case CommandReady:
+		fmt.Printf("  command: %q - %v\n", msg.Command, "ready")
+	case CommandFailed:
+		fmt.Printf("  command: %q - %v\n", msg.Command, "failed")
 	case CommandRequest:
 		fmt.Printf("  command: %q - %v\n", msg.Command, "request")
 		req, _ := RequestFromDump(msg.Data)

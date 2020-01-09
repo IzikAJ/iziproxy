@@ -42,5 +42,5 @@ func main() {
 		Single: flags.Single,
 	}
 
-	server.Server(conf.Initialize())
+	server.Start(conf.Initialize())
 }

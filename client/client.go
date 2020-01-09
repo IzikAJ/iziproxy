@@ -11,6 +11,7 @@ import (
 type Client struct {
 	Getaway string
 	Host    string
+	Space   string
 
 	conn  *shared.Connection
 	wg    sync.WaitGroup

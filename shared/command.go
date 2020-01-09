@@ -9,12 +9,10 @@ const (
 	CommandPong
 
 	// - CONTEXT COMMANDS:
+	// CommandSetup - send credentials + other setup data
+	CommandSetup
 	// CommandReady - if server connection ready
 	CommandReady
-	// CommandAuth - ask/send credentials
-	CommandAuth
-	// CommandScope - allow/request scope
-	CommandScope
 	// CommandFailed - response if previous command invalid/failed
 	CommandFailed
 

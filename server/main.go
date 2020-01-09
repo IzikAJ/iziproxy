@@ -13,8 +13,8 @@ type ProxyPack struct {
 	signal   chan int
 }
 
-// Server - full server daemon
-func Server(config *Config) {
+// Start - full server daemon
+func Start(config *Config) {
 	(*config).Initialize()
 
 	fmt.Println("TODO: Server daemon")

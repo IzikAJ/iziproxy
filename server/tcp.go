@@ -21,8 +21,13 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 
 	conn.Init()
 
-	spaceSignal := make(chan uuid.UUID)
-	ufoSignal := make(chan int)
+	cable := Cable{
+		Connected: true,
+
+		pool:        make(map[uuid.UUID]*ProxyPack),
+		spaceSignal: make(chan uuid.UUID),
+		ufoSignal:   make(chan int),
+	}
 
 	go func() {
 		for {
@@ -32,20 +37,44 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 				if err == io.EOF {
 					fmt.Println("R: CLIENT DISCONNECTED (EOF)", err)
 					conf.Stats.disconnected()
-					ufoSignal <- 1
+					cable.ufoSignal <- 1
 					return
 				}
 				switch err.(type) {
 				case net.Error:
 					fmt.Println("R: CLIENT DISCONNECTED (EPIPE)", err)
 					conf.Stats.disconnected()
-					ufoSignal <- 1
+					cable.ufoSignal <- 1
 					return
 				}
 				fmt.Println("reciveMessage ERROR", err, msg)
 				return
 			}
 			switch msg.Command {
+			case shared.CommandSetup:
+				fmt.Println("CONNECTION SETUP COMMAND")
+				msg.Print()
+				//
+				data, err := shared.ConnectionSetupFromDump(msg.Data)
+				if err != nil {
+					fmt.Println("getData ERROR", err, msg.Data)
+					conf.Stats.disconnected()
+					cable.ufoSignal <- 1
+					return
+				}
+				//
+				cable.Scope = data.Scope
+				(*conf).space[data.Scope] = cable.spaceSignal
+				cable.Authorized = true
+				cable.Owner = "Tester"
+
+				msg, err := shared.Commander.MakeReady()
+				err = conn.SendMessage(msg)
+				if err != nil {
+					fmt.Println("Ready ERROR?", (*conn).RemoteAddr())
+					return
+				}
+
 			case shared.CommandResponse:
 				resp, err := shared.MsgManager.GetRequest(msg)
 				if err != nil {
@@ -59,18 +88,19 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 				} else {
 					fmt.Println("POOL ERROR")
 				}
+
 			case shared.CommandPong:
 				fmt.Print("<")
+
 			default:
 				fmt.Println("RECIVED UNHANDLED MESSAGE")
 				msg.Print()
 			}
 		}
 	}()
-	(*conf).space["test"] = spaceSignal
 	for {
 		select {
-		case ruuid := <-spaceSignal:
+		case ruuid := <-cable.spaceSignal:
 			if req, ok := (*conf).pool[ruuid]; ok {
 				msg, err := shared.Commander.MakeRequest((*req).Request)
 				err = conn.SendMessage(msg)
@@ -90,14 +120,16 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 					continue
 				}
 			}
-		case <-time.Tick(10 * time.Second):
+		case <-time.Tick(30 * time.Second):
 			msg, err := shared.Commander.MakePing()
 			err = conn.SendMessage(msg)
 			if err != nil {
 				fmt.Println("PING ERROR?", (*conn).RemoteAddr())
 				return
 			}
-		case <-ufoSignal:
+		case <-cable.ufoSignal:
+			// TODO
+			// handle ufo signals
 			return
 		}
 	}

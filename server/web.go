@@ -50,8 +50,8 @@ func bindSubdomainHandler(conf *Config) func(http.ResponseWriter, *http.Request)
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, _ := shared.RequestFromRequest(r)
 
-		// vars := mux.Vars(r)
-		// subdomain := vars["subdomain"]
+		vars := mux.Vars(r)
+		subdomain := vars["subdomain"]
 
 		signal := make(chan int)
 
@@ -61,7 +61,7 @@ func bindSubdomainHandler(conf *Config) func(http.ResponseWriter, *http.Request)
 		})
 		(*conf).Stats.start()
 
-		if spaceSignal, ok := (*conf).space["test"]; ok {
+		if spaceSignal, ok := (*conf).space[subdomain]; ok {
 			spaceSignal <- req.ID
 		} else {
 			failResp(&w, http.StatusBadGateway, "NO CLIENT CONNECTED")

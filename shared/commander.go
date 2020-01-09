@@ -35,7 +35,7 @@ func (cmd *commander) Parse(data []byte) (msg Message, err error) {
 	return
 }
 
-// MakePing - ping message
+// MakePing - Ping message
 func (cmd *commander) MakePing() (msg Message, err error) {
 	return Message{Command: CommandPing}, nil
 }
@@ -45,7 +45,7 @@ func (cmd *commander) MakePong() (msg Message, err error) {
 	return Message{Command: CommandPong}, nil
 }
 
-// MakeRequest - req message
+// MakeRequest - Request message
 func (cmd *commander) MakeRequest(req Request) (msg Message, err error) {
 	raw, err := json.Marshal(req)
 	if err != nil {
@@ -55,7 +55,7 @@ func (cmd *commander) MakeRequest(req Request) (msg Message, err error) {
 	return
 }
 
-// MakeResponse - req message
+// MakeResponse - Response message
 func (cmd *commander) MakeResponse(req Request) (msg Message, err error) {
 	raw, err := json.Marshal(req)
 	if err != nil {
@@ -63,4 +63,23 @@ func (cmd *commander) MakeResponse(req Request) (msg Message, err error) {
 	}
 	msg = Message{Command: CommandResponse, Data: raw}
 	return
+}
+
+// MakePing - Ping message
+func (cmd *commander) MakeSetup(data ConnectionSetup) (msg Message, err error) {
+	raw, err := json.Marshal(data)
+	if err != nil {
+		return
+	}
+	return Message{Command: CommandSetup, Data: raw}, nil
+}
+
+// MakeReady - Pong message
+func (cmd *commander) MakeReady() (msg Message, err error) {
+	return Message{Command: CommandReady}, nil
+}
+
+// MakeFailed - Pong message
+func (cmd *commander) MakeFailed() (msg Message, err error) {
+	return Message{Command: CommandFailed}, nil
 }
