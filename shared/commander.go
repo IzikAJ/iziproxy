@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
@@ -19,67 +18,55 @@ func (cmd *commander) print() {
 
 // Parse - return persed message
 func (cmd *commander) Parse(data []byte) (msg Message, err error) {
-	err = json.Unmarshal(data, &msg)
-	if err != nil {
-		fmt.Println("")
-		fmt.Println("")
-		if len(data) > 200 {
-			fmt.Println(string(data[:100]))
-			fmt.Println(".........")
-			fmt.Println(string(data[len(data)-100:]))
+	return MessageFromDump(data)
+}
+
+type allowDump interface {
+	dump() ([]byte, error)
+}
+
+func (cmd *commander) NewMessage(code int, items ...allowDump) (msg Message, err error) {
+	var raw []byte
+	for _, item := range items {
+		if dumped, err := item.dump(); err == nil {
+			raw = dumped
+			break
 		}
-		fmt.Println(err)
-		fmt.Println("")
-		fmt.Println("")
 	}
-	return
+	return Message{Command: code, Data: raw}, nil
 }
 
 // MakePing - Ping message
 func (cmd *commander) MakePing() (msg Message, err error) {
-	return Message{Command: CommandPing}, nil
+	return cmd.NewMessage(CommandPing)
 }
 
 // MakePong - Pong message
 func (cmd *commander) MakePong() (msg Message, err error) {
-	return Message{Command: CommandPong}, nil
+	return cmd.NewMessage(CommandPong)
 }
 
 // MakeRequest - Request message
 func (cmd *commander) MakeRequest(req Request) (msg Message, err error) {
-	raw, err := json.Marshal(req)
-	if err != nil {
-		return
-	}
-	msg = Message{Command: CommandRequest, Data: raw}
-	return
+	return cmd.NewMessage(CommandRequest, req)
 }
 
 // MakeResponse - Response message
 func (cmd *commander) MakeResponse(req Request) (msg Message, err error) {
-	raw, err := json.Marshal(req)
-	if err != nil {
-		return
-	}
-	msg = Message{Command: CommandResponse, Data: raw}
-	return
+	return cmd.NewMessage(CommandResponse, req)
 }
 
 // MakePing - Ping message
 func (cmd *commander) MakeSetup(data ConnectionSetup) (msg Message, err error) {
-	raw, err := json.Marshal(data)
-	if err != nil {
-		return
-	}
-	return Message{Command: CommandSetup, Data: raw}, nil
+	return cmd.NewMessage(CommandSetup, data)
 }
 
 // MakeReady - Pong message
-func (cmd *commander) MakeReady() (msg Message, err error) {
-	return Message{Command: CommandReady}, nil
+func (cmd *commander) MakeReady(data ConnectionResult) (msg Message, err error) {
+	return cmd.NewMessage(CommandReady, data)
 }
 
 // MakeFailed - Pong message
-func (cmd *commander) MakeFailed() (msg Message, err error) {
-	return Message{Command: CommandFailed}, nil
+func (cmd *commander) MakeFailed(data ConnectionError) (msg Message, err error) {
+	return cmd.NewMessage(CommandFailed, data)
 }

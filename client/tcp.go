@@ -46,17 +46,21 @@ func (client *Client) handle() {
 	conn.Init()
 
 	// test setup
-	msg, err := shared.Commander.MakeSetup(shared.ConnectionSetup{Token: "test_key", Scope: "izi"})
+	msg, err := shared.Commander.MakeSetup(shared.ConnectionSetup{
+		Token:    "test_key",
+		Scope:    client.Space,
+		Fallback: client.Fallback,
+	})
 	if err != nil {
 		return
 	}
-	err = shared.MsgManager.SendMessage(msg, conn)
+	err = shared.MessageManager.SendMessage(msg, conn)
 	if err != nil {
 		return
 	}
 
 	for {
-		msg, err := shared.MsgManager.ReciveMessage(conn)
+		msg, err := shared.MessageManager.ReciveMessage(conn)
 		if err != nil {
 			if err == io.EOF {
 				fmt.Println("DISCONNECTED!")
@@ -75,19 +79,19 @@ func (client *Client) handle() {
 			msg.Print()
 		case shared.CommandPing:
 			pong, err := shared.Commander.MakePong()
-			err = shared.MsgManager.SendMessage(pong, conn)
+			err = shared.MessageManager.SendMessage(pong, conn)
 			if err != nil {
 				fmt.Println("PONG ERROR", err)
 			}
 		case shared.CommandRequest:
 			go func() {
-				req, err := shared.MsgManager.GetRequest(msg)
+				req, err := shared.MessageManager.GetRequest(msg)
 				fmt.Printf("REQ < %s:%s\n", req.Method, req.Path)
 
 				resp, err := client.load(req)
 
 				msg2, err := shared.Commander.MakeResponse(resp)
-				err = shared.MsgManager.SendMessage(msg2, conn)
+				err = shared.MessageManager.SendMessage(msg2, conn)
 				if err != nil {
 					fmt.Println("ERROR", err)
 				}

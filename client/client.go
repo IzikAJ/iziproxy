@@ -9,9 +9,10 @@ import (
 
 // Client - client instance
 type Client struct {
-	Getaway string
-	Host    string
-	Space   string
+	Getaway  string
+	Host     string
+	Space    string
+	Fallback bool
 
 	conn  *shared.Connection
 	wg    sync.WaitGroup

@@ -33,7 +33,7 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 
 	go func() {
 		for {
-			msg, err := shared.MsgManager.ReciveMessage(conn)
+			msg, err := shared.MessageManager.ReciveMessage(conn)
 			if err != nil {
 				conf.Stats.fail()
 				if err == io.EOF {
@@ -66,11 +66,24 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 				}
 				//
 				cable.Scope = data.Scope
-				(*conf).space[data.Scope] = cable.spaceSignal
+				if _, ok := conf.space[cable.Scope]; ok {
+					// scope already owned
+					if data.Fallback {
+						cable.Scope = "test-test-test"
+						fmt.Println("Scope fallback?", cable.Scope)
+					} else {
+						panic("alarm!!!")
+					}
+				}
+				(*conf).space[cable.Scope] = cable.spaceSignal
 				cable.Authorized = true
 				cable.Owner = "Tester"
 
-				msg, err := shared.Commander.MakeReady()
+				msg, err := shared.Commander.MakeReady(shared.ConnectionResult{
+					Scope:   cable.Scope,
+					Status:  "connected",
+					Message: "connected successfully",
+				})
 				err = conn.SendMessage(msg)
 				if err != nil {
 					fmt.Println("Ready ERROR?", (*conn).RemoteAddr())
@@ -78,7 +91,7 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 				}
 
 			case shared.CommandResponse:
-				resp, err := shared.MsgManager.GetRequest(msg)
+				resp, err := shared.MessageManager.GetRequest(msg)
 				if err != nil {
 					fmt.Println("getRequest ERROR", err, msg.Data)
 					return

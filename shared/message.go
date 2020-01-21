@@ -16,7 +16,6 @@ type Message struct {
 // Print is used for debug messages in console
 func (msg Message) Print() {
 	fmt.Printf("MESSAGE: {\n")
-	// fmt.Printf("  command: %q\n", msg.Command)
 	msg.explain()
 	fmt.Printf("}\n")
 }
@@ -42,6 +41,8 @@ func (msg Message) explain() {
 		data.printTab("  ")
 	case CommandReady:
 		fmt.Printf("  command: %q - %v\n", msg.Command, "ready")
+		data, _ := ConnectionResultFromDump(msg.Data)
+		data.print()
 	case CommandFailed:
 		fmt.Printf("  command: %q - %v\n", msg.Command, "failed")
 	case CommandRequest:
@@ -67,8 +68,28 @@ func (msg Message) dump() ([]byte, error) {
 	return json.Marshal(msg)
 }
 
-// ParseMessage - return persed message
-func ParseMessage(data []byte) (msg Message, err error) {
+// recognizeError is a trivial implementation of error.
+type recognizeError struct {
+	Message string
+}
+
+func (e *recognizeError) Error() string {
+	return e.Message
+}
+
+func (msg Message) result() (conn ConnectionResult, err error) {
+	if msg.Command != CommandReady {
+		return conn, &recognizeError{"invalid"}
+	}
+	return ConnectionResultFromDump(msg.Data)
+}
+
+func (msg Message) error() (conn ConnectionError, err error) {
+	return ConnectionErrorFromDump(msg.Data)
+}
+
+// MessageFromDump - return persed message
+func MessageFromDump(data []byte) (msg Message, err error) {
 	return msg, json.Unmarshal(data, &msg)
 }
 
@@ -109,35 +130,3 @@ func (msg *Message) UnmarshalJSON(data []byte) error {
 	(*msg).Data = decode([]byte((*aux).RawData))
 	return nil
 }
-
-type msgManager struct{}
-
-func (m msgManager) ReciveMessage(conn *Connection) (msg Message, err error) {
-	data, err := conn.ReadRaw()
-	if err != nil {
-		return
-	}
-
-	msg, err = Commander.Parse(data)
-	if err != nil {
-		fmt.Printf("DATA PARSE ERROR\n%q\n", err)
-		time.Sleep(time.Minute)
-	}
-	return
-}
-
-func (m msgManager) GetRequest(msg Message) (Request, error) {
-	return RequestFromDump(msg.Data)
-}
-
-func (m msgManager) SendMessage(msg Message, conn *Connection) (err error) {
-	data, err := msg.dump()
-	if err != nil {
-		return
-	}
-	err = conn.WriteRaw(data)
-	return
-}
-
-// MsgManager - MsgManager instance
-var MsgManager = msgManager{}

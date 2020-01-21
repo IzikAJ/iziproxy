@@ -27,9 +27,10 @@ func main() {
 
 	fmt.Println("flags", flags)
 	client := &client.Client{
-		Getaway: "127.0.0.1:2010",
-		Host:    flags.Addr,
-		Space:   flags.Space,
+		Getaway:  "127.0.0.1:2010",
+		Host:     flags.Addr,
+		Space:    flags.Space,
+		Fallback: true,
 	}
 	client.Init()
 	client.Start()
