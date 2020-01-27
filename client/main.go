@@ -26,7 +26,7 @@ func (client *Client) Start() {
 		}
 	}()
 
-	for {
+	for client.alive = true; client.alive; {
 		client.connect()
 		client.wg.Wait()
 	}

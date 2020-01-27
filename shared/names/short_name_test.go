@@ -54,3 +54,23 @@ func TestShortNameGeneratorFill(t *testing.T) {
 		}
 	}
 }
+
+func TestShortNameGeneratorFillFail(t *testing.T) {
+	var names = make(map[string]string)
+	gen := ShortNameGenerator(func(name string) bool {
+		_, ok := names[name]
+		return !ok
+	})
+	(gen.(*shortName)).maxSize = 2
+	for index := 0; index < 1500; index++ {
+		if name, err := gen.Next(); err == nil {
+			names[name] = name
+		} else {
+			if index < 500 {
+				t.Errorf("should not fail at least (500 times): %v", index)
+			}
+			return
+		}
+	}
+	t.Errorf("should fail before this point!")
+}

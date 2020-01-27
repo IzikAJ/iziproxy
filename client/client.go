@@ -18,4 +18,5 @@ type Client struct {
 	wg    sync.WaitGroup
 	http  *http.Client
 	retry int
+	alive bool
 }

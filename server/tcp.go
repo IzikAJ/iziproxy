@@ -8,7 +8,28 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/izikaj/iziproxy/shared"
+	"github.com/izikaj/iziproxy/shared/names"
 )
+
+func resolveConnectionSpace(conf *Config, data shared.ConnectionSetup, cable *Cable) (err error) {
+	cable.Scope = data.Scope
+	if _, ok := conf.space[cable.Scope]; ok || cable.Scope == "" {
+		// scope already owned / not passed
+		if data.Fallback {
+			gen := names.ShortNameGenerator(func(name string) bool {
+				_, ok := conf.space[name]
+				return !ok
+			})
+			if cable.Scope, err = gen.Next(); err != nil {
+				return
+			}
+		} else {
+			return &names.GenerationError{S: "no fallback, sorry"}
+		}
+	}
+	conf.space[cable.Scope] = cable.spaceSignal
+	return
+}
 
 func handleServerConnection(conf *Config, conn *shared.Connection) {
 	cable := Cable{
@@ -65,17 +86,22 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 					return
 				}
 				//
-				cable.Scope = data.Scope
-				if _, ok := conf.space[cable.Scope]; ok {
-					// scope already owned
-					if data.Fallback {
-						cable.Scope = "test-test-test"
-						fmt.Println("Scope fallback?", cable.Scope)
-					} else {
-						panic("alarm!!!")
-					}
+
+				fmt.Printf("Connection resolving...: %v\n", conf.space)
+
+				err = resolveConnectionSpace(conf, data, &cable)
+				if err != nil {
+					fmt.Println("ConnectionSpace ERROR?", (*conn).RemoteAddr())
+
+					msg, _ = shared.Commander.MakeFailed(shared.ConnectionError{
+						Code:    "namespace_resolve_error",
+						Message: err.Error(),
+					})
+					conn.SendMessage(msg)
+					return
 				}
-				(*conf).space[cable.Scope] = cable.spaceSignal
+				fmt.Printf("Connection resolved: %v\n", conf.space)
+
 				cable.Authorized = true
 				cable.Owner = "Tester"
 
@@ -152,17 +178,17 @@ func handleServerConnection(conf *Config, conn *shared.Connection) {
 
 // TCPServer - run tcp server
 func TCPServer(conf *Config) {
-	(*conf).locker.Add(1)
+	// (*conf).locker.Add(1)
 	defer (*conf).locker.Done()
 
 	listener, err := net.Listen("tcp", ":2010")
 	if err != nil {
-		fmt.Println("CANT LISTEN", err)
+		fmt.Println("CAN'T LISTEN", err)
 	}
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Println("CANT ACCEPT", err)
+			fmt.Println("CAN'T ACCEPT", err)
 			continue
 		}
 

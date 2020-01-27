@@ -7,9 +7,9 @@ type Generator interface {
 
 // GenerationError - generation error instance
 type GenerationError struct {
-	s string
+	S string
 }
 
 func (e *GenerationError) Error() string {
-	return e.s
+	return e.S
 }

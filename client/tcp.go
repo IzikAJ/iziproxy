@@ -40,13 +40,14 @@ func (client *Client) load(req shared.Request) (resp shared.Request, err error) 
 	return
 }
 
-func (client *Client) handle() {
+func (client *Client) handle() (err error) {
 	conn := client.conn
 	defer conn.Close()
 	conn.Init()
+	var msg shared.Message
 
 	// test setup
-	msg, err := shared.Commander.MakeSetup(shared.ConnectionSetup{
+	msg, err = shared.Commander.MakeSetup(shared.ConnectionSetup{
 		Token:    "test_key",
 		Scope:    client.Space,
 		Fallback: client.Fallback,
@@ -60,11 +61,11 @@ func (client *Client) handle() {
 	}
 
 	for {
-		msg, err := shared.MessageManager.ReciveMessage(conn)
+		msg, err = shared.MessageManager.ReciveMessage(conn)
 		if err != nil {
 			if err == io.EOF {
 				fmt.Println("DISCONNECTED!")
-				break
+				return
 			}
 			fmt.Println("MESSAGE ERROR", err, msg)
 			continue
@@ -74,6 +75,11 @@ func (client *Client) handle() {
 		case shared.CommandFailed:
 			fmt.Println("Failed COMMAND")
 			msg.Print()
+			client.alive = false
+			return &shared.ConnectionError{
+				Code:    "conn_failed",
+				Message: "recived fail message",
+			}
 		case shared.CommandReady:
 			fmt.Println("Ready COMMAND")
 			msg.Print()
@@ -111,12 +117,13 @@ func (client *Client) connect() {
 		conn, err := net.Dial("tcp", (*client).Getaway)
 		if err != nil {
 			fmt.Println("CONNECTION ERROR", err)
-			if (*client).retry > 0 {
-				(*client).retry--
+			if client.retry > 0 {
+				client.retry--
 				fmt.Printf("  retry times least %d\n", (*client).retry)
 				time.Sleep(ReconnectTimeout * time.Second)
 				continue
 			} else {
+				client.alive = false
 				return
 			}
 		} else {
@@ -124,6 +131,10 @@ func (client *Client) connect() {
 		}
 		defer conn.Close()
 		client.conn = &shared.Connection{Conn: conn}
-		client.handle()
+		err = client.handle()
+		if !client.alive {
+			fmt.Printf("??? %v", err)
+			return
+		}
 	}
 }

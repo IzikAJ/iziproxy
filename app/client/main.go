@@ -30,7 +30,7 @@ func main() {
 		Getaway:  "127.0.0.1:2010",
 		Host:     flags.Addr,
 		Space:    flags.Space,
-		Fallback: true,
+		Fallback: flags.Space == "",
 	}
 	client.Init()
 	client.Start()

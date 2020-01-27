@@ -14,7 +14,8 @@ type Config struct {
 	Stats  Stats
 	locker sync.WaitGroup
 
-	Single bool
+	Single      bool
+	initialized bool
 	sync.Mutex
 	pool  map[uuid.UUID]*ProxyPack
 	space map[string](chan<- uuid.UUID)
@@ -22,9 +23,12 @@ type Config struct {
 
 // Initialize - init config
 func (conf *Config) Initialize() *Config {
-	(*conf).pool = make(map[uuid.UUID]*ProxyPack)
-	(*conf).space = make(map[string](chan<- uuid.UUID))
-	(*conf).Stats = Stats{}
+	if !conf.initialized {
+		(*conf).pool = make(map[uuid.UUID]*ProxyPack)
+		(*conf).space = make(map[string](chan<- uuid.UUID))
+		(*conf).Stats = Stats{}
+	}
+
 	return conf
 }
 
