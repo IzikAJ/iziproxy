@@ -3,13 +3,12 @@ package client
 import (
 	"bytes"
 	"fmt"
-	"io"
-	"math/rand"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/izikaj/iziproxy/shared"
+	"github.com/izikaj/iziproxy/shared/names"
 )
 
 // ReconnectTimeout - timeout to reconnect attempt in seconds
@@ -40,6 +39,67 @@ func (client *Client) load(req shared.Request) (resp shared.Request, err error) 
 	return
 }
 
+func (client *Client) handleRequest(msg shared.Message) (err error) {
+	req, err := shared.MessageManager.GetRequest(msg)
+	fmt.Printf("REQ < %s:%s\n", req.Method, req.Path)
+
+	resp, err := client.load(req)
+
+	msg2, err := shared.Commander.MakeResponse(resp)
+	err = shared.MessageManager.SendMessage(msg2, client.conn)
+	if err != nil {
+		fmt.Println("handleRequest ERROR:", err)
+	}
+	return
+}
+
+func (client *Client) handleIncomingMessages() (err error) {
+	defer func() {
+		client.signal <- err
+	}()
+
+	var msg shared.Message
+	for {
+		msg, err = shared.MessageManager.ReciveMessage(client.conn)
+		if err != nil {
+			fmt.Println("reciveMessage ERROR", err, msg)
+			// client.signal <- err
+			return
+		}
+		switch msg.Command {
+		case shared.CommandPong:
+			fmt.Print("<")
+
+		case shared.CommandReady:
+			fmt.Println("Connection READY")
+			msg.Print()
+
+		case shared.CommandFailed:
+			fmt.Println("Connection FAILED")
+			client.alive = false
+			err = &names.GenerationError{S: "TEST"}
+			return
+
+		case shared.CommandRequest:
+			go client.handleRequest(msg)
+
+		case shared.CommandPing:
+			msg, err = shared.Commander.MakePong()
+			err = client.conn.SendMessage(msg)
+			if err != nil {
+				fmt.Println("PONG ERROR?", client.conn.RemoteAddr())
+				return
+			}
+
+			fmt.Print(">")
+
+		default:
+			fmt.Println("RECIVED UNHANDLED MESSAGE")
+			msg.Print()
+		}
+	}
+}
+
 func (client *Client) handle() (err error) {
 	conn := client.conn
 	defer conn.Close()
@@ -60,52 +120,21 @@ func (client *Client) handle() (err error) {
 		return
 	}
 
+	go client.handleIncomingMessages()
+
 	for {
-		msg, err = shared.MessageManager.ReciveMessage(conn)
-		if err != nil {
-			if err == io.EOF {
-				fmt.Println("DISCONNECTED!")
+		select {
+		case err = <-client.signal:
+			fmt.Printf("ERROR SIGNAL: %v\n", err)
+			return
+
+		case <-time.Tick(10 * time.Second):
+			msg, err = shared.Commander.MakePing()
+			err = conn.SendMessage(msg)
+			if err != nil {
+				fmt.Println("PING ERROR?", (*conn).RemoteAddr())
 				return
 			}
-			fmt.Println("MESSAGE ERROR", err, msg)
-			continue
-		}
-
-		switch msg.Command {
-		case shared.CommandFailed:
-			fmt.Println("Failed COMMAND")
-			msg.Print()
-			client.alive = false
-			return &shared.ConnectionError{
-				Code:    "conn_failed",
-				Message: "recived fail message",
-			}
-		case shared.CommandReady:
-			fmt.Println("Ready COMMAND")
-			msg.Print()
-		case shared.CommandPing:
-			pong, err := shared.Commander.MakePong()
-			err = shared.MessageManager.SendMessage(pong, conn)
-			if err != nil {
-				fmt.Println("PONG ERROR", err)
-			}
-		case shared.CommandRequest:
-			go func() {
-				req, err := shared.MessageManager.GetRequest(msg)
-				fmt.Printf("REQ < %s:%s\n", req.Method, req.Path)
-
-				resp, err := client.load(req)
-
-				msg2, err := shared.Commander.MakeResponse(resp)
-				err = shared.MessageManager.SendMessage(msg2, conn)
-				if err != nil {
-					fmt.Println("ERROR", err)
-				}
-				time.Sleep((500 + time.Duration(rand.Intn(1000))) * time.Millisecond)
-			}()
-		default:
-			fmt.Println("UNKNOWN COMMAND", msg.Command)
-			msg.Print()
 		}
 	}
 }

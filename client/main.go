@@ -9,15 +9,18 @@ import (
 var once sync.Once
 
 // Init will initialize client instance
-func (client *Client) Init() {
+func (client *Client) Init() *Client {
 	once.Do(func() {
 		client.http = &http.Client{}
-		(*client).retry = 10
+		client.signal = make(chan error)
+		client.retry = 10
 	})
+
+	return client
 }
 
 // Start will boot up client
-func (client *Client) Start() {
+func (client *Client) Start() *Client {
 	fmt.Println("Starting client...\nServe:", client.Host)
 	defer fmt.Println("Client closed!")
 	defer func() {
@@ -30,4 +33,6 @@ func (client *Client) Start() {
 		client.connect()
 		client.wg.Wait()
 	}
+
+	return client
 }

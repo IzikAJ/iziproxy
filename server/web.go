@@ -24,11 +24,11 @@ type Web struct {
 }
 
 func (server Web) start(conf *Config) {
-	defer (*conf).locker.Done()
+	defer conf.locker.Done()
 
 	fmt.Println("TODO: WEB SERVER")
 
-	if (*conf).Single {
+	if conf.Single {
 		serveSingle(conf)
 	} else {
 		serve(conf)
@@ -36,9 +36,9 @@ func (server Web) start(conf *Config) {
 }
 
 func placePack(conf *Config, pack *ProxyPack) {
-	(*conf).Lock()
-	defer (*conf).Unlock()
-	(*conf).pool[(*pack).Request.ID] = pack
+	conf.Lock()
+	defer conf.Unlock()
+	conf.pool[pack.Request.ID] = pack
 }
 
 func failResp(w *http.ResponseWriter, status int, msg string) {
@@ -59,9 +59,9 @@ func bindSubdomainHandler(conf *Config) func(http.ResponseWriter, *http.Request)
 			Request: req,
 			signal:  signal,
 		})
-		(*conf).Stats.start()
+		conf.Stats.start()
 
-		if spaceSignal, ok := (*conf).space[subdomain]; ok {
+		if spaceSignal, ok := conf.space[subdomain]; ok {
 			spaceSignal <- req.ID
 		} else {
 			failResp(&w, http.StatusBadGateway, "NO CLIENT CONNECTED")
@@ -71,11 +71,11 @@ func bindSubdomainHandler(conf *Config) func(http.ResponseWriter, *http.Request)
 		select {
 		case <-signal:
 
-			if d, ok := (*conf).pool[req.ID]; ok {
+			if d, ok := conf.pool[req.ID]; ok {
 				resp := (*d).Response
 
 				if resp.Status == 0 {
-					(*conf).Stats.fail()
+					conf.Stats.fail()
 					failResp(&w, http.StatusBadGateway, "EMPTY RESPONSE FROM CLIENT")
 					return
 				}
@@ -89,7 +89,7 @@ func bindSubdomainHandler(conf *Config) func(http.ResponseWriter, *http.Request)
 
 				w.WriteHeader(resp.Status)
 				w.Write(resp.Body)
-				(*conf).Stats.complete()
+				conf.Stats.complete()
 			} else {
 				conf.Stats.fail()
 				failResp(&w, http.StatusBadGateway, "NO RESPONSE FROM CLIENT")
@@ -105,9 +105,23 @@ func bindSubdomainHandler(conf *Config) func(http.ResponseWriter, *http.Request)
 func bindStatsHandler(conf *Config) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, time.Now().String())
-		raw, _ := json.Marshal((*conf).Stats)
+		w.Header().Add("Refresh", "3;url=/stats")
+		fmt.Fprintln(w, "<head>")
+		fmt.Fprintln(w, "<meta http-equiv=\"refresh\" content=\"3;url=/stats\" />")
+		fmt.Fprintln(w, "</head>")
+		fmt.Fprintln(w, "<body>")
+		fmt.Fprintln(w, "SERVER IS RUNNING")
+		fmt.Fprintln(w, "<br/>----------<br/>")
+		for space, signal := range conf.space {
+			fmt.Fprintf(w, "space: <a href=\"http://%v.proxy.me\" target=\"_blank\"><b>%v</b> - %v</a><br/>", space, space, signal)
+		}
+		fmt.Fprintln(w, "----------<br/>")
+		fmt.Fprintln(w, "STATS:<br/>")
+		raw, _ := json.Marshal(conf.Stats)
 		fmt.Fprintln(w, string(raw))
+		fmt.Fprintln(w, "<br/>----------<br/>")
+		fmt.Fprintln(w, time.Now().String())
+		fmt.Fprintln(w, "</body>")
 	}
 }
 
