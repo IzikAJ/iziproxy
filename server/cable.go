@@ -15,7 +15,7 @@ type Cable struct {
 
 	Stats       Stats
 	spaceSignal chan uuid.UUID
-	ufoSignal   chan int
+	ufoSignal   chan error
 
 	sync.Mutex
 	pool map[uuid.UUID]*ProxyPack

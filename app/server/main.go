@@ -36,11 +36,11 @@ func main() {
 		fmt.Println("RUN IN SINGLE INSTANCE MODE")
 	}
 
-	conf := server.Config{
+	conf := &server.Config{
 		Host:   flags.Host,
 		Port:   flags.Port,
 		Single: flags.Single,
 	}
 
-	server.Start(conf.Initialize())
+	server.NewServer(conf).Start()
 }

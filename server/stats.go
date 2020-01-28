@@ -10,28 +10,28 @@ type Stats struct {
 }
 
 func (stats *Stats) connected() {
-	(*stats).Connected++
+	stats.Connected++
 }
 
 func (stats *Stats) disconnected() {
-	(*stats).Connected--
+	stats.Connected--
 }
 
 func (stats *Stats) complete() {
-	(*stats).Done++
-	(*stats).Pending--
+	stats.Done++
+	stats.Pending--
 }
 
 func (stats *Stats) start() {
-	(*stats).Pending++
+	stats.Pending++
 }
 
 func (stats *Stats) fail() {
-	(*stats).Pending--
-	(*stats).Failed++
+	stats.Pending--
+	stats.Failed++
 }
 
 func (stats *Stats) timeout() {
-	(*stats).Pending--
-	(*stats).Timeout++
+	stats.Pending--
+	stats.Timeout++
 }
