@@ -33,7 +33,21 @@ func writeStatsResponse(writerPointer *http.ResponseWriter, server *Server) {
 	writer := *writerPointer
 	runtime.ReadMemStats(stats)
 
+	rawStats, _ := json.Marshal(server.Stats)
+	spaces := []statItem{}
+	for space, signal := range server.space {
+		spaces = append(spaces, statItem{
+			title: space,
+			value: fmt.Sprintf("<a href=\"http://%v.proxy.me\" target=\"_blank\"><b>%v</b> - %v</a>", space, space, signal),
+		})
+	}
+
 	blocks := []statBlock{
+		statBlock{
+			title: "Spaces",
+			items: spaces,
+		},
+
 		statBlock{
 			title: "Mem stats",
 			items: []statItem{
@@ -59,6 +73,8 @@ func writeStatsResponse(writerPointer *http.ResponseWriter, server *Server) {
 		statBlock{
 			title: "Other",
 			items: []statItem{
+				statItem{"Server Stats", fmt.Sprintf("%v", string(rawStats)), ""},
+				statItem{"Current Time", fmt.Sprintf("%v", time.Now().String()), ""},
 				statItem{"NumCPU", fmt.Sprintf("%d", runtime.NumCPU()), ""},
 				statItem{"NumGoroutine", fmt.Sprintf("%d", runtime.NumGoroutine()), ""},
 				statItem{"GO Version", fmt.Sprintf("%v", runtime.Version()), ""},
@@ -67,23 +83,11 @@ func writeStatsResponse(writerPointer *http.ResponseWriter, server *Server) {
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	writer.Header().Add("Refresh", "3;url=/stats")
+	fmt.Fprintln(writer, "<html>")
 	fmt.Fprintln(writer, "<head>")
 	fmt.Fprintln(writer, "<meta http-equiv=\"refresh\" content=\"3;url=/stats\" />")
 	fmt.Fprintln(writer, "</head>")
 	fmt.Fprintln(writer, "<body>")
-	fmt.Fprintln(writer, "SERVER IS RUNNING")
-	fmt.Fprintln(writer, "<br/>----------<br/>")
-	for space, signal := range server.space {
-		fmt.Fprintf(writer, "space: <a href=\"http://%v.proxy.me\" target=\"_blank\"><b>%v</b> - %v</a><br/>", space, space, signal)
-	}
-	fmt.Fprintln(writer, "----------<br/>")
-	fmt.Fprintln(writer, "STATS:<br/>")
-	raw, _ := json.Marshal(server.Stats)
-	fmt.Fprintln(writer, string(raw))
-	fmt.Fprintln(writer, "<br/>----------<br/>")
-	fmt.Fprintln(writer, time.Now().String())
-	fmt.Fprintln(writer, "<br/>----------<br/>")
 
 	for _, block := range blocks {
 		fmt.Fprintf(writer, "<h3>%v</h3>", block.title)
@@ -94,4 +98,5 @@ func writeStatsResponse(writerPointer *http.ResponseWriter, server *Server) {
 	}
 
 	fmt.Fprintln(writer, "</body>")
+	fmt.Fprintln(writer, "</html>")
 }
