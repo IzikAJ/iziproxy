@@ -17,7 +17,6 @@ func (server *TCPServer) handleMessages(conn *shared.Connection, cable *Cable) (
 	for {
 		msg, err = shared.MessageManager.ReciveMessage(conn)
 		if err != nil {
-			server.core.Stats.fail()
 			if err == io.EOF {
 				fmt.Println("R: CLIENT DISCONNECTED (EOF)", err)
 				return

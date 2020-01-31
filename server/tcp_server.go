@@ -75,7 +75,7 @@ func (server *TCPServer) resolveConnectionSpace(data shared.ConnectionSetup, cab
 				return
 			}
 		} else {
-			return &names.GenerationError{S: "no fallback, sorry"}
+			return names.NewGenerationError("no fallback, sorry")
 		}
 	}
 	server.core.space[cable.Scope] = cable.spaceSignal

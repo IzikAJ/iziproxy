@@ -46,12 +46,11 @@ func (name *shortName) hit() {
 func (name *shortName) miss() (err error) {
 	name.missTimes++
 	if name.missTimes > (name.minSize * missRate) {
-		if name.minSize < name.maxSize {
-			name.minSize++
-			name.missTimes = 0
-		} else {
-			err = &GenerationError{"to many miss times, increase max size"}
+		if name.minSize >= name.maxSize {
+			return MissError
 		}
+		name.minSize++
+		name.missTimes = 0
 	}
 	return
 }
