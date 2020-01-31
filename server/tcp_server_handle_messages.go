@@ -20,13 +20,11 @@ func (server *TCPServer) handleMessages(conn *shared.Connection, cable *Cable) (
 			server.core.Stats.fail()
 			if err == io.EOF {
 				fmt.Println("R: CLIENT DISCONNECTED (EOF)", err)
-				server.core.Stats.disconnected()
 				return
 			}
 			switch err.(type) {
 			case net.Error:
 				fmt.Println("R: CLIENT DISCONNECTED (EPIPE)", err)
-				server.core.Stats.disconnected()
 				return
 			}
 			fmt.Println("reciveMessage ERROR", err, msg)
@@ -41,7 +39,6 @@ func (server *TCPServer) handleMessages(conn *shared.Connection, cable *Cable) (
 			data, err = shared.ConnectionSetupFromDump(msg.Data)
 			if err != nil {
 				fmt.Println("getData ERROR", err, msg.Data)
-				server.core.Stats.disconnected()
 				return
 			}
 			//

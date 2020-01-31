@@ -21,7 +21,7 @@ type WEBServer struct {
 
 // Start - start WEBserver daemon
 func (server *WEBServer) Start() {
-	fmt.Println("Starting FULL WEBServer...")
+	fmt.Println("Starting WEBServer...")
 	defer fmt.Println("WEBServer exists")
 	defer server.core.locker.Done()
 
@@ -55,7 +55,7 @@ func (server *WEBServer) subdomainHandler() func(http.ResponseWriter, *http.Requ
 
 		signal := make(chan int)
 
-		server.core.placePack(&ProxyPack{
+		server.core.place(&ProxyPack{
 			Request: req,
 			signal:  signal,
 		})

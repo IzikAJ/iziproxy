@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/izikaj/iziproxy/server"
-	"github.com/izikaj/iziproxy/shared"
 )
 
 func main() {
@@ -18,28 +17,22 @@ func main() {
 	if port <= 0 {
 		port = 3000
 	}
-	flags := shared.AppFlags{
+	conf := &server.Config{
 		Host:   "0.0.0.0",
 		Port:   port,
 		Single: false,
 	}
 
-	flag.StringVar(&(flags.Host), "host", "0.0.0.0", "run with host")
-	flag.IntVar(&(flags.Port), "port", port, "run with port")
-	flag.BoolVar(&(flags.Single), "single", false, "run as single proxy")
+	flag.StringVar(&(conf.Host), "host", conf.Host, "run with host")
+	flag.IntVar(&(conf.Port), "port", conf.Port, "run with port")
+	flag.BoolVar(&(conf.Single), "single", conf.Single, "run as single proxy")
 
 	flag.Parse()
 
-	fmt.Println("host", flags.Host)
-	fmt.Println("port", flags.Port)
-	if flags.Single {
+	fmt.Println("host", conf.Host)
+	fmt.Println("port", conf.Port)
+	if conf.Single {
 		fmt.Println("RUN IN SINGLE INSTANCE MODE")
-	}
-
-	conf := &server.Config{
-		Host:   flags.Host,
-		Port:   flags.Port,
-		Single: flags.Single,
 	}
 
 	server.NewServer(conf).Start()

@@ -8,14 +8,13 @@ import (
 
 // Config - server config
 type Config struct {
-	Host string
-	Port int
+	Host  string
+	Port  int
+	Stats Stats
 
-	Stats  Stats
 	locker sync.WaitGroup
+	Single bool
 
-	Single      bool
-	initialized bool
 	sync.Mutex
 	pool  map[uuid.UUID]*ProxyPack
 	space map[string](chan<- uuid.UUID)

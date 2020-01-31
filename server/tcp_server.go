@@ -16,7 +16,7 @@ type TCPServer struct {
 
 // Start - start TCPServer daemon
 func (server *TCPServer) Start() {
-	fmt.Println("Starting FULL TCPServer...")
+	fmt.Println("Starting TCPServer...")
 	defer fmt.Println("TCPServer exists")
 	defer server.core.locker.Done()
 

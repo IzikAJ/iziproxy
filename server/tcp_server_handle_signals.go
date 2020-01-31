@@ -19,38 +19,28 @@ func (server *TCPServer) handleSignals(conn *shared.Connection, cable *Cable) {
 				if err != nil {
 					if err == io.EOF {
 						fmt.Println("W: CLIENT DISCONNECTED (EOF)", err)
-						server.core.Stats.disconnected()
 						return
 					}
 					switch err.(type) {
 					case net.Error:
 						fmt.Println("W: CLIENT DISCONNECTED (EPIPE)", err)
-						server.core.Stats.disconnected()
 						return
 					}
 					fmt.Println("SEND REQUEST ERROR", err)
 					continue
 				}
 			}
-		case <-time.Tick(10 * time.Second):
+		case <-time.Tick(60 * time.Second):
 			msg, err := shared.Commander.MakePing()
-			attempts := 10
-			for {
-				err = conn.SendMessage(msg)
-				if err == nil {
-					break
-				} else {
-					attempts--
-					if attempts < 0 {
-						fmt.Println("PING ERROR!!!", conn.RemoteAddr())
-						return
-					}
-					fmt.Println("PING ERROR?", conn.RemoteAddr())
-				}
+			err = conn.SendMessage(msg)
+			if err == nil {
+				fmt.Println("PING ERROR!!!", conn.RemoteAddr())
+				return
 			}
-		case <-cable.ufoSignal:
+		case err := <-cable.ufoSignal:
 			// TODO
-			// handle ufo signals
+			// handle ufo signals?
+			fmt.Printf("ufoSignal [%q], %v\n", err, err.Error())
 			return
 		}
 	}

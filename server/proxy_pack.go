@@ -10,3 +10,9 @@ type ProxyPack struct {
 	Response shared.Request
 	signal   chan int
 }
+
+func (server *Server) place(pack *ProxyPack) {
+	server.Lock()
+	defer server.Unlock()
+	server.pool[pack.Request.ID] = pack
+}
