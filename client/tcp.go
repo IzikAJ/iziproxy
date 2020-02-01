@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/izikaj/iziproxy/shared"
-	"github.com/izikaj/iziproxy/shared/names"
 )
 
 // ReconnectTimeout - timeout to reconnect attempt in seconds
@@ -63,7 +62,6 @@ func (client *Client) handleIncomingMessages() (err error) {
 		msg, err = shared.MessageManager.ReciveMessage(client.conn)
 		if err != nil {
 			fmt.Println("reciveMessage ERROR", err, msg)
-			// client.signal <- err
 			return
 		}
 		switch msg.Command {
@@ -77,8 +75,7 @@ func (client *Client) handleIncomingMessages() (err error) {
 		case shared.CommandFailed:
 			fmt.Println("Connection FAILED")
 			client.alive = false
-			err = &names.GenerationError{S: "TEST"}
-			return
+			return fmt.Errorf("Connection FAILED")
 
 		case shared.CommandRequest:
 			go client.handleRequest(msg)

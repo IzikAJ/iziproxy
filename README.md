@@ -6,8 +6,18 @@ go run app/server/* -port 7080
 ## client
 go run app/client/*
 
-# TODO
-- client should PING server, and server should close connection by timeout
+
+# TODO list
+- server should close connection by timeout?
 - client authorization by acces token
 - recive acces token for client
 - add tests
+
+
+# Build
+
+## server
+`go build -o bin/server -ldflags "-s -w" app/server/*`
+
+## client
+`go build -o bin/client -ldflags "-s -w" app/client/*`
