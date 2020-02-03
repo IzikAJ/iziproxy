@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/google/uuid"
 	"github.com/izikaj/iziproxy/shared"
 	"github.com/izikaj/iziproxy/shared/names"
 )
@@ -17,7 +16,7 @@ type TCPServer struct {
 // Start - start TCPServer daemon
 func (server *TCPServer) Start() {
 	fmt.Println("Starting TCPServer...")
-	defer fmt.Println("TCPServer exists")
+	defer fmt.Println("TCPServer stopped")
 	defer server.core.locker.Done()
 
 	listener, err := net.Listen("tcp", ":2010")
@@ -41,9 +40,8 @@ func (server *TCPServer) handleServerConnection(conn *shared.Connection) {
 	cable := &Cable{
 		Connected: true,
 
-		pool:        make(map[uuid.UUID]*ProxyPack),
-		spaceSignal: make(chan uuid.UUID),
-		ufoSignal:   make(chan error),
+		spaceSignal: make(SpaceSignal),
+		ufoSignal:   make(UfoSignal),
 	}
 
 	defer func() {
@@ -63,6 +61,11 @@ func (server *TCPServer) handleServerConnection(conn *shared.Connection) {
 }
 
 func (server *TCPServer) resolveConnectionSpace(data shared.ConnectionSetup, cable *Cable) (err error) {
+	if server.core.Single {
+		fmt.Println("spaceSignal 3", cable.spaceSignal)
+		server.core.globalSpaceSignal = cable.spaceSignal
+		return nil
+	}
 	cable.Scope = data.Scope
 	if _, ok := server.core.space[cable.Scope]; ok || cable.Scope == "" {
 		// scope already owned / not passed

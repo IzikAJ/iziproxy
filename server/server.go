@@ -3,8 +3,6 @@ package server
 import (
 	"fmt"
 	"sync"
-
-	"github.com/google/uuid"
 )
 
 // Server - server instance
@@ -16,9 +14,14 @@ type Server struct {
 	Single bool
 	locker sync.WaitGroup
 
+	tcp *TCPServer
+	web *WEBServer
+
 	sync.Mutex
-	pool  map[uuid.UUID]*ProxyPack
-	space map[string](chan<- uuid.UUID)
+	pool  ProxyPackMap
+	space SpaceSignalMap
+
+	globalSpaceSignal SpaceSignal
 }
 
 // Start - start server daemon
@@ -28,22 +31,39 @@ func (server *Server) Start() {
 	server.locker.Add(2)
 
 	// start tcp server
-	go NewTCPServer(server).Start()
-
+	go server.tcp.Start()
 	// start web server
-	go NewWEBServer(server).Start()
+	go server.web.Start()
 
 	server.locker.Wait()
 }
 
-// NewServer - create new Server with confguration
-func NewServer(params *Config) *Server {
-	return &Server{
-		Host:  params.Host,
-		Port:  params.Port,
-		Stats: Stats{},
-
-		pool:  make(map[uuid.UUID]*ProxyPack),
-		space: make(map[string](chan<- uuid.UUID)),
+func (server *Server) findSpaceSignal(params spaceParams) (SpaceSignal, error) {
+	if server.Single {
+		return server.globalSpaceSignal, nil
 	}
+	if signal, ok := server.space[params.subdomain]; ok {
+		return signal, nil
+	}
+	return nil, fmt.Errorf("not found")
+}
+
+// NewServer - create new Server with confguration
+func NewServer(params *Config) (server *Server) {
+	server = &Server{
+		Host:   params.Host,
+		Port:   params.Port,
+		Single: params.Single,
+		Stats:  Stats{},
+
+		pool:  make(ProxyPackMap),
+		space: make(SpaceSignalMap),
+
+		globalSpaceSignal: make(SpaceSignal),
+	}
+
+	server.tcp = NewTCPServer(server)
+	server.web = NewWEBServer(server)
+
+	return
 }

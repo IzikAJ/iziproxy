@@ -17,10 +17,11 @@ func main() {
 	if port <= 0 {
 		port = 3000
 	}
+
 	conf := &server.Config{
 		Host:   "0.0.0.0",
 		Port:   port,
-		Single: false,
+		Single: true,
 	}
 
 	flag.StringVar(&(conf.Host), "host", conf.Host, "run with host")
@@ -30,6 +31,9 @@ func main() {
 
 	fmt.Println("host", conf.Host)
 	fmt.Println("port", conf.Port)
+	if conf.Single {
+		fmt.Println("RUN IN SINGLE INSTANCE MODE")
+	}
 
 	server.NewServer(conf).Start()
 }

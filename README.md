@@ -8,6 +8,7 @@ go run app/client/*
 
 
 # TODO list
+- build single server executable standalone
 - server should close connection by timeout?
 - client authorization by acces token
 - recive acces token for client

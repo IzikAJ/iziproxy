@@ -4,11 +4,14 @@ import (
 	"github.com/izikaj/iziproxy/shared"
 )
 
+// CodeSignal - channel to inform about recived status
+type CodeSignal = chan int
+
 // ProxyPack - just one server req
 type ProxyPack struct {
 	Request  shared.Request
 	Response shared.Request
-	signal   chan int
+	signal   CodeSignal
 }
 
 func (server *Server) place(pack *ProxyPack) {

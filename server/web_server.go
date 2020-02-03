@@ -11,6 +11,10 @@ import (
 	"github.com/izikaj/iziproxy/shared"
 )
 
+type spaceParams struct {
+	subdomain string
+}
+
 // WEBServer - server instance
 type WEBServer struct {
 	core     *Server
@@ -22,10 +26,14 @@ type WEBServer struct {
 // Start - start WEBserver daemon
 func (server *WEBServer) Start() {
 	fmt.Println("Starting WEBServer...")
-	defer fmt.Println("WEBServer exists")
+	defer fmt.Println("WEBServer stopped")
 	defer server.core.locker.Done()
 
-	server.serveSpaced()
+	if server.core.Single {
+		server.serveSingle()
+	} else {
+		server.serveSpaced()
+	}
 }
 
 func (server *WEBServer) serveSpaced() {
@@ -46,22 +54,33 @@ func (server *WEBServer) serveSpaced() {
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(server.core.Port), router))
 }
 
+func (server *WEBServer) serveSingle() {
+	router := mux.NewRouter()
+
+	router.Path("/__stats").Methods("GET").HandlerFunc(server.statsHandler())
+	router.PathPrefix("/").HandlerFunc(server.subdomainHandler())
+
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(server.core.Port), router))
+}
+
 func (server *WEBServer) subdomainHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, _ := shared.RequestFromRequest(r)
 
 		vars := mux.Vars(r)
-		subdomain := vars["subdomain"]
+		params := spaceParams{
+			subdomain: vars["subdomain"],
+		}
 
-		signal := make(chan int)
-
+		signal := make(CodeSignal)
 		server.core.place(&ProxyPack{
 			Request: req,
 			signal:  signal,
 		})
 		server.core.Stats.start()
 
-		if spaceSignal, ok := server.core.space[subdomain]; ok {
+		if spaceSignal, err := server.core.findSpaceSignal(params); err == nil {
+			fmt.Println("spaceSignal 1", spaceSignal)
 			spaceSignal <- req.ID
 		} else {
 			writeFailResponse(&w, http.StatusBadGateway, "NO CLIENT CONNECTED")
