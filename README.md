@@ -8,11 +8,16 @@ go run app/client/*
 
 
 # TODO list
-- build single server executable standalone
+- extract single server to different module
 - server should close connection by timeout?
 - client authorization by acces token
 - recive acces token for client
-- add tests
+- compress communication data?
+- improve names:
+  - silly-names
+  - more predictable name generation
+  - allow reuse previous names?
+- add more tests
 
 
 # Build
