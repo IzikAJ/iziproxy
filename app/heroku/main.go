@@ -35,5 +35,5 @@ func main() {
 		fmt.Println("RUN IN SINGLE INSTANCE MODE")
 	}
 
-	server.NewServer(conf).Start()
+	server.NewHerokuServer(conf).Start()
 }

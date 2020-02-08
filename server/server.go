@@ -3,7 +3,23 @@ package server
 import (
 	"fmt"
 	"sync"
+
+	"github.com/izikaj/iziproxy/shared"
 )
+
+// AbstractServer - simplest web/tcp server interface
+type AbstractServer interface {
+	Start()
+}
+
+// AbstractTCPCommands - simplest tcp server commands interface
+type AbstractTCPCommands interface {
+	onSetup(conn *shared.Connection, cable *Cable, data shared.ConnectionSetup) error
+	onResponse(conn *shared.Connection, cable *Cable, data shared.Request) error
+	onPing(conn *shared.Connection, cable *Cable) error
+	onPong(conn *shared.Connection, cable *Cable) error
+	onUnrecognized(conn *shared.Connection, cable *Cable, data shared.Message) error
+}
 
 // Server - server instance
 type Server struct {
@@ -14,14 +30,14 @@ type Server struct {
 	Single bool
 	locker sync.WaitGroup
 
-	tcp *TCPServer
-	web *WEBServer
+	tcp AbstractServer
+	web AbstractServer
 
 	sync.Mutex
 	pool  ProxyPackMap
 	space SpaceSignalMap
 
-	globalSpaceSignal SpaceSignal
+	spaceSignal SpaceSignal
 }
 
 // Start - start server daemon
@@ -40,7 +56,7 @@ func (server *Server) Start() {
 
 func (server *Server) findSpaceSignal(params spaceParams) (SpaceSignal, error) {
 	if server.Single {
-		return server.globalSpaceSignal, nil
+		return server.spaceSignal, nil
 	}
 	if signal, ok := server.space[params.subdomain]; ok {
 		return signal, nil
@@ -59,7 +75,7 @@ func NewServer(params *Config) (server *Server) {
 		pool:  make(ProxyPackMap),
 		space: make(SpaceSignalMap),
 
-		globalSpaceSignal: make(SpaceSignal),
+		spaceSignal: make(SpaceSignal),
 	}
 
 	server.tcp = NewTCPServer(server)

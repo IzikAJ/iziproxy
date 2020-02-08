@@ -8,18 +8,18 @@ import (
 	"github.com/izikaj/iziproxy/shared/names"
 )
 
-// TCPServer - server instance
-type TCPServer struct {
+// HerokuTCPServer - heroku server instance
+type HerokuTCPServer struct {
 	core *Server
 
 	// include default command handlers
 	defaultTCPCommands
 }
 
-// Start - start TCPServer daemon
-func (server *TCPServer) Start() {
-	fmt.Println("Starting TCPServer...")
-	defer fmt.Println("TCPServer stopped")
+// Start - start HerokuTCPServer daemon
+func (server *HerokuTCPServer) Start() {
+	fmt.Println("Starting HerokuTCPServer...")
+	defer fmt.Println("HerokuTCPServer stopped")
 	defer server.core.locker.Done()
 
 	listener, err := net.Listen("tcp", ":2010")
@@ -39,7 +39,7 @@ func (server *TCPServer) Start() {
 	}
 }
 
-func (server *TCPServer) handleServerConnection(conn *shared.Connection) {
+func (server *HerokuTCPServer) handleServerConnection(conn *shared.Connection) {
 	cable := &Cable{
 		Connected: true,
 
@@ -59,11 +59,16 @@ func (server *TCPServer) handleServerConnection(conn *shared.Connection) {
 
 	conn.Init()
 
-	go server.handleMessages(conn, cable)
-	server.handleSignals(conn, cable)
+	go handleTCPMessages(server, server.core, conn, cable)
+	handleTCPSignals(server.core, conn, cable)
 }
 
-func (server *TCPServer) resolveConnectionSpace(data shared.ConnectionSetup, cable *Cable) (err error) {
+func (server *HerokuTCPServer) resolveConnectionSpace(data shared.ConnectionSetup, cable *Cable) (err error) {
+	if server.core.Single {
+		fmt.Println("spaceSignal 3", cable.spaceSignal)
+		server.core.spaceSignal = cable.spaceSignal
+		return nil
+	}
 	cable.Scope = data.Scope
 	if _, ok := server.core.space[cable.Scope]; ok || cable.Scope == "" {
 		// scope already owned / not passed
@@ -83,39 +88,13 @@ func (server *TCPServer) resolveConnectionSpace(data shared.ConnectionSetup, cab
 	return
 }
 
-func (server *TCPServer) onSetup(conn *shared.Connection, cable *Cable, data shared.ConnectionSetup) (err error) {
-	fmt.Printf("Connection resolving...: %v\n", server.core.space)
-	var msg shared.Message
-
-	err = server.resolveConnectionSpace(data, cable)
-	if err != nil {
-		fmt.Println("ConnectionSpace ERROR?", conn.RemoteAddr())
-
-		msg, _ = shared.Commander.MakeFailed(shared.ConnectionError{
-			Code:    "namespace_resolve_error",
-			Message: err.Error(),
-		})
-		conn.SendMessage(msg)
-		return
-	}
-	fmt.Printf("Connection resolved: %v\n", server.core.space)
-
-	cable.Authorized = true
-	cable.Owner = "Tester"
-
-	msg, err = shared.Commander.MakeReady(shared.ConnectionResult{
-		Scope:   cable.Scope,
-		Status:  "connected",
-		Message: "connected successfully",
-	})
-	err = conn.SendMessage(msg)
-	if err != nil {
-		fmt.Println("Ready ERROR?", conn.RemoteAddr())
-	}
-	return
+func (server *HerokuTCPServer) onSetup(conn *shared.Connection, cable *Cable, data shared.ConnectionSetup) (err error) {
+	fmt.Println("spaceSignal 3", cable.spaceSignal)
+	server.core.spaceSignal = cable.spaceSignal
+	return nil
 }
 
-func (server *TCPServer) onResponse(conn *shared.Connection, cable *Cable, data shared.Request) (err error) {
+func (server *HerokuTCPServer) onResponse(conn *shared.Connection, cable *Cable, data shared.Request) (err error) {
 	if req, ok := server.core.pool[data.ID]; ok {
 		req.Response = data
 
@@ -126,9 +105,9 @@ func (server *TCPServer) onResponse(conn *shared.Connection, cable *Cable, data 
 	return nil
 }
 
-// NewTCPServer - create new TCPServer with confguration
-func NewTCPServer(core *Server) *TCPServer {
-	return &TCPServer{
+// NewHerokuTCPServer - create new HerokuTCPServer with confguration
+func NewHerokuTCPServer(core *Server) *HerokuTCPServer {
+	return &HerokuTCPServer{
 		core: core,
 	}
 }
