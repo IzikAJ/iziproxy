@@ -59,8 +59,9 @@ func (server *TCPServer) handleServerConnection(conn *shared.Connection) {
 
 	conn.Init()
 
-	go server.handleMessages(conn, cable)
-	server.handleSignals(conn, cable)
+	go handleTCPMessages(server, server.core, conn, cable)
+	// server.handleSignals(conn, cable)
+	handleTCPSignals(server.core, conn, cable)
 }
 
 func (server *TCPServer) resolveConnectionSpace(data shared.ConnectionSetup, cable *Cable) (err error) {
