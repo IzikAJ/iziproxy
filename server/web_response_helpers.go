@@ -17,6 +17,10 @@ func writeFailResponse(writerPointer *http.ResponseWriter, status int, msg strin
 
 var stats = new(runtime.MemStats)
 
+type commonWebResponses struct {
+	core *Server
+}
+
 type statBlock struct {
 	title string
 	desc  string
@@ -26,6 +30,18 @@ type statItem struct {
 	title string
 	value string
 	desc  string
+}
+
+func (server *commonWebResponses) writeFailResponse(writerPointer *http.ResponseWriter, status int, message string) {
+	writer := *writerPointer
+	writer.WriteHeader(status)
+	writer.Write([]byte(message))
+}
+
+func (server *commonWebResponses) statsHandler(core *Server) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		writeStatsResponse(&w, core)
+	}
 }
 
 // write server stats response
@@ -85,7 +101,7 @@ func writeStatsResponse(writerPointer *http.ResponseWriter, server *Server) {
 	writer.WriteHeader(http.StatusOK)
 	fmt.Fprintln(writer, "<html>")
 	fmt.Fprintln(writer, "<head>")
-	fmt.Fprintln(writer, "<meta http-equiv=\"refresh\" content=\"3;url=/stats\" />")
+	fmt.Fprintln(writer, "<meta http-equiv=\"refresh\" content=\"3;url=/__stats\" />")
 	fmt.Fprintln(writer, "</head>")
 	fmt.Fprintln(writer, "<body>")
 

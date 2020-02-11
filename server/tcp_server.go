@@ -60,7 +60,6 @@ func (server *TCPServer) handleServerConnection(conn *shared.Connection) {
 	conn.Init()
 
 	go handleTCPMessages(server, server.core, conn, cable)
-	// server.handleSignals(conn, cable)
 	handleTCPSignals(server.core, conn, cable)
 }
 

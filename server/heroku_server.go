@@ -13,7 +13,7 @@ func NewHerokuServer(params *Config) (server *Server) {
 	}
 
 	server.tcp = NewHerokuTCPServer(server)
-	server.web = NewWEBServer(server)
-
+	server.web = NewHerokuWEBServer(server)
+	// server.web = NewWEBServer(server)
 	return
 }

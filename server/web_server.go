@@ -21,6 +21,7 @@ type WEBServer struct {
 	hostName string
 
 	packetTimeout time.Duration
+	commonWebResponses
 }
 
 // Start - start WEBserver daemon
@@ -29,36 +30,23 @@ func (server *WEBServer) Start() {
 	defer fmt.Println("WEBServer stopped")
 	defer server.core.locker.Done()
 
-	if server.core.Single {
-		server.serveSingle()
-	} else {
-		server.serveSpaced()
-	}
+	server.listen()
 }
 
-func (server *WEBServer) serveSpaced() {
+func (server *WEBServer) listen() {
 	router := mux.NewRouter()
 
 	router.Host(
-		"{subdomain:.+}." + server.hostName,
+		fmt.Sprintf("{subdomain:.+}.%v", server.hostName),
 	).HandlerFunc(server.subdomainHandler())
 
-	router.HandleFunc("/stats", server.statsHandler())
+	router.HandleFunc("/__stats", server.statsHandler(server.core))
 
 	router.Methods("GET").HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, "//"+server.hostName+"/stats", 302)
+			http.Redirect(w, r, "//"+server.hostName+"/__stats", 302)
 		},
 	)
-
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(server.core.Port), router))
-}
-
-func (server *WEBServer) serveSingle() {
-	router := mux.NewRouter()
-
-	router.Path("/__stats").Methods("GET").HandlerFunc(server.statsHandler())
-	router.PathPrefix("/").HandlerFunc(server.subdomainHandler())
 
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(server.core.Port), router))
 }
@@ -119,12 +107,6 @@ func (server *WEBServer) subdomainHandler() func(http.ResponseWriter, *http.Requ
 			server.core.Stats.timeout()
 			writeFailResponse(&w, http.StatusGatewayTimeout, "TIMEOUT ERROR")
 		}
-	}
-}
-
-func (server *WEBServer) statsHandler() func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		writeStatsResponse(&w, server.core)
 	}
 }
 
