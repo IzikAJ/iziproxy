@@ -13,7 +13,10 @@ import (
 func onTCPRequest(core *Server, conn *shared.Connection, ruuid uuid.UUID) error {
 	var pack *ProxyPack
 	var ok bool
-	if pack, ok = core.pool[ruuid]; !ok {
+	core.Lock()
+	pack, ok = core.pool[ruuid]
+	core.Unlock()
+	if !ok {
 		return nil
 	}
 

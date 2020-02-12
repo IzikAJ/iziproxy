@@ -21,7 +21,7 @@ type WEBServer struct {
 	hostName string
 
 	packetTimeout time.Duration
-	commonWebResponses
+	commonWebHelpers
 }
 
 // Start - start WEBserver daemon
@@ -38,7 +38,7 @@ func (server *WEBServer) listen() {
 
 	router.Host(
 		fmt.Sprintf("{subdomain:.+}.%v", server.hostName),
-	).HandlerFunc(server.subdomainHandler())
+	).HandlerFunc(server.clientRequestHandler())
 
 	router.HandleFunc("/__stats", server.statsHandler(server.core))
 
@@ -51,7 +51,7 @@ func (server *WEBServer) listen() {
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(server.core.Port), router))
 }
 
-func (server *WEBServer) subdomainHandler() func(http.ResponseWriter, *http.Request) {
+func (server *WEBServer) clientRequestHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, _ := shared.RequestFromRequest(r)
 
@@ -75,38 +75,13 @@ func (server *WEBServer) subdomainHandler() func(http.ResponseWriter, *http.Requ
 			return
 		}
 
-		select {
-		case <-signal:
-
-			if d, ok := server.core.pool[req.ID]; ok {
-				resp := d.Response
-
-				if resp.Status == 0 {
-					server.core.Stats.fail()
-					writeFailResponse(&w, http.StatusBadGateway, "EMPTY RESPONSE FROM CLIENT")
-					return
-				}
-				fmt.Printf("> [%d] %s\n", resp.Status, (*d).Request.Path)
-
-				for _, header := range resp.Headers {
-					for _, value := range header.Value {
-						w.Header().Set(header.Name, value)
-					}
-				}
-
-				w.WriteHeader(resp.Status)
-				w.Write(resp.Body)
-				delete(server.core.pool, req.ID)
-				server.core.Stats.complete()
-			} else {
-				server.core.Stats.fail()
-				writeFailResponse(&w, http.StatusBadGateway, "NO RESPONSE FROM CLIENT")
-			}
-
-		case <-time.Tick(server.packetTimeout):
-			server.core.Stats.timeout()
-			writeFailResponse(&w, http.StatusGatewayTimeout, "TIMEOUT ERROR")
-		}
+		server.waitForResponse(waitForResponseParams{
+			core:    server.core,
+			req:     &req,
+			signal:  &signal,
+			w:       &w,
+			timeout: server.packetTimeout,
+		})
 	}
 }
 

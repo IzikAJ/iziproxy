@@ -116,9 +116,11 @@ func (server *TCPServer) onSetup(conn *shared.Connection, cable *Cable, data sha
 }
 
 func (server *TCPServer) onResponse(conn *shared.Connection, cable *Cable, data shared.Request) (err error) {
-	if req, ok := server.core.pool[data.ID]; ok {
+	server.core.Lock()
+	req, ok := server.core.pool[data.ID]
+	server.core.Unlock()
+	if ok {
 		req.Response = data
-
 		req.signal <- data.Status
 	} else {
 		fmt.Println("POOL ERROR")

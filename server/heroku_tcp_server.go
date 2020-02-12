@@ -95,11 +95,15 @@ func (server *HerokuTCPServer) onSetup(conn *shared.Connection, cable *Cable, da
 }
 
 func (server *HerokuTCPServer) onResponse(conn *shared.Connection, cable *Cable, data shared.Request) (err error) {
-	if req, ok := server.core.pool[data.ID]; ok {
-		req.Response = data
+	server.core.Lock()
+	req, ok := server.core.pool[data.ID]
+	server.core.Unlock()
 
+	if ok {
+		req.Response = data
 		req.signal <- data.Status
 	} else {
+		server.core.Unlock()
 		fmt.Println("POOL ERROR")
 	}
 	return nil

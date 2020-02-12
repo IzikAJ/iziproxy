@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"runtime"
 
 	"github.com/izikaj/iziproxy/client"
 )
@@ -10,6 +11,7 @@ import (
 func main() {
 	fmt.Println("Starting client...", flag.Args())
 	defer fmt.Println("THE END!")
+	runtime.GOMAXPROCS(4)
 
 	params := client.Config{
 		Addr:  "http://localhost:3001",

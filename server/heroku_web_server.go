@@ -17,7 +17,7 @@ type HerokuWEBServer struct {
 	hostName string
 
 	packetTimeout time.Duration
-	commonWebResponses
+	commonWebHelpers
 }
 
 // Start - start HerokuWEBserver daemon
@@ -33,12 +33,12 @@ func (server *HerokuWEBServer) listen() {
 	router := mux.NewRouter()
 
 	router.Path("/__stats").Methods("GET").HandlerFunc(server.statsHandler(server.core))
-	router.PathPrefix("/").HandlerFunc(server.subdomainHandler())
+	router.PathPrefix("/").HandlerFunc(server.clientRequestHandler())
 
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(server.core.Port), router))
 }
 
-func (server *HerokuWEBServer) subdomainHandler() func(http.ResponseWriter, *http.Request) {
+func (server *HerokuWEBServer) clientRequestHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, _ := shared.RequestFromRequest(r)
 
@@ -48,40 +48,16 @@ func (server *HerokuWEBServer) subdomainHandler() func(http.ResponseWriter, *htt
 			signal:  signal,
 		})
 		server.core.Stats.start()
+
 		server.core.spaceSignal <- req.ID
 
-		select {
-		case <-signal:
-
-			if d, ok := server.core.pool[req.ID]; ok {
-				resp := d.Response
-
-				if resp.Status == 0 {
-					server.core.Stats.fail()
-					server.writeFailResponse(&w, http.StatusBadGateway, "EMPTY RESPONSE FROM CLIENT")
-					return
-				}
-				fmt.Printf("> [%d] %s\n", resp.Status, (*d).Request.Path)
-
-				for _, header := range resp.Headers {
-					for _, value := range header.Value {
-						w.Header().Set(header.Name, value)
-					}
-				}
-
-				w.WriteHeader(resp.Status)
-				w.Write(resp.Body)
-				delete(server.core.pool, req.ID)
-				server.core.Stats.complete()
-			} else {
-				server.core.Stats.fail()
-				server.writeFailResponse(&w, http.StatusBadGateway, "NO RESPONSE FROM CLIENT")
-			}
-
-		case <-time.After(server.packetTimeout):
-			server.core.Stats.timeout()
-			server.writeFailResponse(&w, http.StatusGatewayTimeout, "TIMEOUT ERROR")
-		}
+		server.waitForResponse(waitForResponseParams{
+			core:    server.core,
+			req:     &req,
+			signal:  &signal,
+			w:       &w,
+			timeout: server.packetTimeout,
+		})
 	}
 }
 

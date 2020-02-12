@@ -114,13 +114,6 @@ func handleTCPMessages(server AbstractTCPCommands, core *Server, conn *shared.Co
 				return
 			}
 			server.onResponse(conn, cable, resp)
-			// if req, ok := core.pool[resp.ID]; ok {
-			// 	req.Response = resp
-
-			// 	req.signal <- resp.Status
-			// } else {
-			// 	fmt.Println("POOL ERROR")
-			// }
 
 		case shared.CommandPong:
 			server.onPong(conn, cable)

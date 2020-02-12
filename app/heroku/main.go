@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 	"strconv"
 
 	"github.com/izikaj/iziproxy/server"
@@ -12,6 +13,7 @@ import (
 func main() {
 	fmt.Println("Starting...")
 	defer fmt.Println("THE END!")
+	runtime.GOMAXPROCS(1)
 
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 	if port <= 0 {

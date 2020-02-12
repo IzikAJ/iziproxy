@@ -17,7 +17,7 @@ func writeFailResponse(writerPointer *http.ResponseWriter, status int, msg strin
 
 var stats = new(runtime.MemStats)
 
-type commonWebResponses struct {
+type commonWebHelpers struct {
 	core *Server
 }
 
@@ -32,13 +32,13 @@ type statItem struct {
 	desc  string
 }
 
-func (server *commonWebResponses) writeFailResponse(writerPointer *http.ResponseWriter, status int, message string) {
+func (server *commonWebHelpers) writeFailResponse(writerPointer *http.ResponseWriter, status int, message string) {
 	writer := *writerPointer
 	writer.WriteHeader(status)
 	writer.Write([]byte(message))
 }
 
-func (server *commonWebResponses) statsHandler(core *Server) func(http.ResponseWriter, *http.Request) {
+func (server *commonWebHelpers) statsHandler(core *Server) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		writeStatsResponse(&w, core)
 	}
