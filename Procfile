@@ -1,1 +1,1 @@
-web: bin/server --single
+web: bin/heroku
