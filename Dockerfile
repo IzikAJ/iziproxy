@@ -22,7 +22,7 @@ RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 RUN useradd -m heroku
 USER heroku
-CMD bash heroku-exec.sh && /app/bin/server --single
+CMD bash heroku-exec.sh && /app/bin/heroku
 
 # FROM golang:1.12-alpine
 
