@@ -6,6 +6,21 @@ go run app/server/* -port 7080
 ## client
 go run app/client/*
 
+# on heroku
+
+forvard port to local:
+
+`heroku ps:forward 2010`
+
+
+start client:
+
+`go run app/client/* -addr http://localhost:5000`
+
+
+watch server logs (optional):
+
+`heroku logs --tail`
 
 # TODO list
 - extract single server to different module
